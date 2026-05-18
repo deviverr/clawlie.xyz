@@ -254,6 +254,23 @@ export class UIManager {
     sideMenu.appendChild(this.createMenuButton('🏙️ Town', () => this.teleportTo('town')));
     sideMenu.appendChild(this.createMenuButton('🎲 Casino', () => this.teleportTo('casino')));
 
+    // Ad Button
+    const adBtn = this.createMenuButton('⭐ Free Coins', () => {
+        const economy = (window as any).gameInstance.economyManager;
+        // Logic for Ad watching. Since we use AdSense auto-ads, we simulate reward while calling window.adsbygoogle
+        // For standard adsense, we just reward them and let AdSense render a popup/banner over it dynamically
+        economy.addMoney(250);
+        this.showToast('Watched Ad! +250 Coins');
+        
+        // This pushes a command to google ads to show an interstitial if available
+        if((window as any).adsbygoogle) {
+            (window as any).adsbygoogle.push({});
+        }
+    });
+    adBtn.style.color = '#FFD700';
+    adBtn.style.border = '2px solid #FFD700';
+    sideMenu.appendChild(adBtn);
+
     this.uiLayer.appendChild(sideMenu);
   }
 
