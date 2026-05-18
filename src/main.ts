@@ -278,16 +278,16 @@ class Game {
       let closestNPC: NPC | null = null;
       let closestDistance = Infinity;
     
-      this.npcManager.getNPCs().forEach(npc => {
-        const dx = npc.x - this.playerX;
-        const dy = npc.y - this.playerY;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-      
-        if (distance < INTERACTION_RADIUS && distance < closestDistance) {
-          closestDistance = distance;
-          closestNPC = npc;
-        }
-      });
+      for (const npc of this.npcManager.getNPCs()) {
+      const dx = npc.x - this.playerX;
+      const dy = npc.y - this.playerY;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+    
+      if (distance < INTERACTION_RADIUS && distance < closestDistance) {
+        closestDistance = distance;
+        closestNPC = npc;
+      }
+    }
     
       if (closestNPC) {
         const line = this.npcManager.interact(closestNPC.id);
