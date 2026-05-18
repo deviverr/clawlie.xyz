@@ -127,7 +127,7 @@ export class WorldRenderer {
     ctx.fillStyle = '#4CAF50';
     ctx.font = '8px "Press Start 2P"';
     ctx.textAlign = 'center';
-    ctx.fillText('YOU', game.playerX, game.playerY - 20);
+    ctx.fillText(game.username || 'YOU', game.playerX, game.playerY - 20);
 
     // 4. Draw Animals
     this.animalsManager.getAnimals().forEach(animal => {

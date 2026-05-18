@@ -118,7 +118,12 @@ export class UIManager {
   private showCharacterSelection(): void {
     const menu = this.uiLayer.querySelector('.menu-content')!;
     menu.innerHTML = `
-      <h2 style="font-size: 16px; margin-bottom: 20px;">Choose Your Character</h2>
+      <h2 style="font-size: 16px; margin-bottom: 20px;">Create Profile</h2>
+      <div style="margin-bottom: 20px; text-align: left;">
+        <label style="font-size: 12px; display: block; margin-bottom: 8px; color: #5d4037;">Nickname:</label>
+        <input type="text" id="nickname-input" class="pixel-input" placeholder="Farmer" maxlength="16" style="width: 100%; padding: 10px; font-family: 'Press Start 2P'; font-size: 14px; border: 4px solid var(--ui-border); box-sizing: border-box; text-transform: uppercase;">
+      </div>
+      <h3 style="font-size: 12px; margin-bottom: 10px; color: #5d4037; text-align: left;">Character:</h3>
       <div class="character-grid">
         <div class="char-option selected" data-skin="player_blue">
           <img src="${this.assetLoader.resolveAssetPath('assets/sprites/blue_character/full_sprite_blue.png')}" style="object-position: 0 0; object-fit: none; width: 32px; height: 32px; transform: scale(1.5);">
@@ -133,7 +138,7 @@ export class UIManager {
           <p>Red</p>
         </div>
       </div>
-      <button class="pixel-btn" id="confirm-char-btn" style="margin-top: 30px;">Start Farming</button>
+      <button class="pixel-btn" id="confirm-char-btn" style="margin-top: 30px; font-size: 16px; padding: 10px 20px;">Start Farming</button>
     `;
 
     let selectedSkin = 'player_blue';
@@ -147,8 +152,16 @@ export class UIManager {
     });
 
     document.getElementById('confirm-char-btn')!.onclick = () => {
+        const nameInput = document.getElementById('nickname-input') as HTMLInputElement;
+        const nickname = nameInput.value.trim().toUpperCase() || 'FARMER';
+        
         const game = (window as any).gameInstance;
-        if (game) game.playerSkin = selectedSkin;
+        if (game) {
+            game.playerSkin = selectedSkin;
+            game.username = nickname;
+        }
+        
+        this.multiplayerManager.setUsername(nickname);
         this.startGame();
     };
   }

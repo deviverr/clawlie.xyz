@@ -54,6 +54,7 @@ class Game {
   public playerX: number;
   public playerY: number;
   public playerSkin: string = 'player_blue';
+  public username: string = 'Guest';
   public gameStarted: boolean = false;
 
   constructor() {
