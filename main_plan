@@ -1,0 +1,101 @@
+You are a senior game developer and software architect. Generate a large-scale, production-quality 2D farming simulation web game using TypeScript + HTML5 Canvas (no external game engines unless absolutely necessary).
+
+The output must be extensive (thousands of lines of code), modular, and structured like a real commercial project.
+
+🎮 Core Requirements
+
+Build a fully playable farming simulation game with:
+
+Tile-based world system
+Farming mechanics (plant, water, grow, harvest)
+Animals, crafting, inventory system
+Player progression (XP, levels, unlocks)
+Economy system (buy/sell/trade goods)
+🌍 Multiplayer Systems (Lightweight but Real)
+
+Implement a mock backend-ready architecture:
+
+Player profiles (JSON-based or simulated backend)
+Trading system between players
+Farm visiting system (load other farms from data)
+Leaderboards (mock or local simulation)
+📅 Seasonal + Live Events System
+Dynamic seasons affecting gameplay and visuals
+Event manager system with timed events
+Limited-time crops, items, and rewards
+Config-driven event definitions (easy to expand)
+🔊 Audio System
+Use Web Audio API
+Background ambient music (looping, dynamic)
+Sound effects for farming, UI, weather
+Day/night sound variation
+💰 Monetization System (Non Pay-to-Win)
+
+Build systems (even if simulated):
+
+Cosmetic shop (skins, decorations, themes)
+Premium currency system
+Expansion packs (new maps/features toggled via config)
+Rewarded ads system (mock implementation with callbacks)
+🧠 Architecture (VERY IMPORTANT)
+
+Use clean, scalable architecture:
+
+Entity Component System (ECS) OR well-structured OOP modules
+Separate:
+Game logic
+Rendering engine
+UI layer
+Audio manager
+Networking/mock backend
+Use managers/services (FarmManager, EconomyManager, EventManager, AudioManager, SaveManager, etc.)
+Config-driven design (JSON or TS config files for items, crops, upgrades)
+💾 Persistence
+Save/load system using localStorage
+Structured so it can be replaced with real backend
+Versioned save system (future-proofing)
+🌦️ Advanced Features (REQUIRED)
+Weather system (rain boosts crops, etc.)
+Day/night cycle
+NPCs with simple AI and quests
+Achievements and daily missions
+Smooth camera system
+🎨 UI/UX
+Clean, modern UI (HTML/CSS overlay or canvas UI)
+Inventory UI, shop UI, trading UI
+Responsive design (desktop + mobile)
+Feedback animations and transitions
+⚙️ Performance
+Optimize rendering loop
+Use requestAnimationFrame properly
+Efficient asset handling
+Avoid unnecessary re-renders
+📁 Output Format (STRICT)
+
+Generate a complete project structure, including:
+
+index.html
+styles.css
+main.ts
+/core (engine systems)
+/game (gameplay logic)
+/ui (UI components)
+/assets (placeholders)
+/config (game data)
+
+Provide ALL code files with clear separation.
+
+🧪 Extras (Push Further)
+Add debug tools / dev console
+Add cheat/dev mode toggle
+Include comments explaining systems
+Make it easy to expand into a live-service game
+🚨 Critical Instructions
+Do NOT simplify the project
+Do NOT output a small demo
+Generate a large, expandable codebase
+Prioritize structure, scalability, and clarity
+Code should actually run in a browser (no pseudo-code)
+🎯 Goal
+
+The result should feel like the foundation of a real indie farming game startup, not a tutorial or prototype.

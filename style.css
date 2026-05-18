@@ -1,0 +1,338 @@
+:root {
+  --primary-color: #4CAF50;
+  --secondary-color: #8BC34A;
+  --ui-bg: #e0d5b0; /* Parchment/Wood feel */
+  --ui-border: #5d4037;
+  --text-color: #3e2723;
+  --shadow-color: rgba(0,0,0,0.4);
+  --pixel-font: 'Press Start 2P', cursive;
+}
+
+body, html {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: var(--pixel-font);
+  background-color: #000;
+  user-select: none;
+  color: var(--text-color);
+  font-size: 12px;
+}
+
+#game-container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+}
+
+canvas {
+  display: block;
+  image-rendering: pixelated;
+}
+
+#ui-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Pixel Art UI Panels */
+.ui-panel {
+  pointer-events: auto;
+  background: var(--ui-bg);
+  border: 4px solid var(--ui-border);
+  image-rendering: pixelated;
+  padding: 16px;
+  box-shadow: 6px 6px 0px var(--shadow-color);
+  position: relative;
+}
+
+.overlay-panel {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+  text-align: center;
+  width: 80%;
+  max-width: 400px;
+}
+
+/* Header HUD */
+#hud-top {
+  pointer-events: auto;
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+  background: var(--ui-bg);
+  border-bottom: 4px solid var(--ui-border);
+  color: var(--text-color);
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 10px;
+}
+
+/* Toolbar */
+#toolbar {
+  pointer-events: auto;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  background: var(--ui-bg);
+  border: 4px solid var(--ui-border);
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.tool-slot {
+  width: 44px;
+  height: 44px;
+  background: #fff;
+  border: 4px solid var(--ui-border);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  position: relative;
+  font-size: 20px;
+}
+
+.tool-slot.active {
+  background: var(--secondary-color);
+  transform: translateY(-4px);
+  box-shadow: 0 4px 0 var(--ui-border);
+}
+
+.item-count {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  font-size: 8px;
+  color: #000;
+  background: rgba(255,255,255,0.8);
+  padding: 0 2px;
+}
+
+/* Buttons */
+.pixel-btn {
+  background: var(--primary-color);
+  border: 4px solid var(--ui-border);
+  color: white;
+  padding: 8px 12px;
+  font-family: var(--pixel-font);
+  cursor: pointer;
+  box-shadow: 4px 4px 0px var(--shadow-color);
+  margin: 4px;
+  text-transform: uppercase;
+  font-size: 10px;
+}
+
+.pixel-btn:hover {
+  background: var(--secondary-color);
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0px var(--shadow-color);
+}
+
+.pixel-btn:active {
+  transform: translate(4px, 4px);
+  box-shadow: 0px 0px 0px var(--shadow-color);
+}
+
+/* Character Selection */
+.character-grid {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.char-option {
+  border: 4px solid var(--ui-border);
+  padding: 8px;
+  cursor: pointer;
+  background: #fff;
+  font-size: 8px;
+}
+
+.char-option:hover {
+  background: var(--secondary-color);
+}
+
+.char-option img {
+  width: 48px;
+  height: 48px;
+  image-rendering: pixelated;
+}
+
+.char-option.selected {
+  border-color: #ffca28;
+  background: #fff9c4;
+}
+
+/* Side Menu */
+#side-menu {
+  position: absolute;
+  top: 80px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: auto;
+}
+
+/* Dialogue Box */
+.dialogue-panel {
+    position: absolute;
+    bottom: 120px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 600px;
+    height: 120px;
+    display: flex;
+    gap: 15px;
+    text-align: left;
+    z-index: 1500;
+}
+
+.dialogue-portrait {
+    width: 80px;
+    height: 80px;
+    border: 4px solid var(--ui-border);
+    background: #fff;
+    image-rendering: pixelated;
+}
+
+.dialogue-text {
+    flex: 1;
+    font-size: 10px;
+    line-height: 1.6;
+}
+
+/* Ad Placeholders */
+.ad-banner {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 320px;
+    height: 50px;
+    background: #000;
+    color: #fff;
+    font-size: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 2px solid var(--ui-border);
+    pointer-events: auto;
+    z-index: 100;
+}
+
+/* Layouts */
+.hidden { display: none !important; }
+.flex-col { display: flex; flex-direction: column; gap: 8px; }
+
+.quest-item {
+  border: 2px solid var(--ui-border);
+  background: #fff;
+  padding: 8px;
+  margin-bottom: 8px;
+  text-align: left;
+  font-size: 8px;
+}
+
+.quest-item.completed {
+  background: #c8e6c9;
+  opacity: 0.8;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-in;
+}
+
+/* Full Screen Menus */
+.full-screen-menu {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    pointer-events: auto;
+}
+
+.menu-content {
+    background: var(--ui-bg);
+    border: 8px solid var(--ui-border);
+    padding: 30px;
+    max-width: 500px;
+    width: 90%;
+    text-align: center;
+}
+
+/* Minimap */
+#minimap-container {
+  position: absolute;
+  top: 80px;
+  left: 20px;
+  width: 120px;
+  height: 120px;
+  background: var(--ui-bg);
+  border: 4px solid var(--ui-border);
+  box-shadow: 4px 4px 0px var(--shadow-color);
+  pointer-events: auto;
+  overflow: hidden;
+}
+
+#minimap-canvas {
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+
+/* Player List */
+#player-list-container {
+  position: absolute;
+  bottom: 100px;
+  right: 20px;
+  width: 150px;
+  background: var(--ui-bg);
+  border: 4px solid var(--ui-border);
+  box-shadow: 4px 4px 0px var(--shadow-color);
+  pointer-events: auto;
+  padding: 8px;
+  font-size: 8px;
+}
+
+.player-list-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.online-dot {
+  width: 6px;
+  height: 6px;
+  background: #4caf50;
+  border-radius: 50%;
+}
