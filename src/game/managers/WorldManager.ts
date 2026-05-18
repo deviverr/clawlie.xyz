@@ -131,12 +131,34 @@ export class WorldManager {
               else loc.tiles[x][y].type = config.base;
           }
       }
-      for(let i=0; i<4; i++) this.smoothTerrain(loc);
+      // Deepen smoothing (Cellular Automata)
+      for(let i=0; i<6; i++) this.smoothTerrain(loc);
+      
+      // Carve random paths through the world
+      for(let p=0; p<15; p++) {
+          let cx = Math.floor(Math.random() * loc.width);
+          let cy = Math.floor(Math.random() * loc.height);
+          for(let steps=0; steps<50; steps++) {
+               if(this.isWithin(loc, cx, cy)) {
+                   loc.tiles[cx][cy].type = TileType.PATH;
+                   // widen the path randomly
+                   if (Math.random() > 0.5 && this.isWithin(loc, cx+1, cy)) loc.tiles[cx+1][cy].type = TileType.PATH;
+                   if (Math.random() > 0.5 && this.isWithin(loc, cx, cy+1)) loc.tiles[cx][cy+1].type = TileType.PATH;
+               }
+               cx += Math.random() > 0.5 ? 1 : -1;
+               cy += Math.random() > 0.5 ? 1 : -1;
+          }
+      }
+
       // Post-process: Add some trees in forests
       for (let x = 0; x < loc.width; x++) {
           for (let y = 0; y < loc.height; y++) {
-              if (loc.tiles[x][y].type === TileType.FOREST && Math.random() > 0.7) {
+              if (loc.tiles[x][y].type === TileType.FOREST && Math.random() > 0.6) {
                   loc.tiles[x][y].type = TileType.TREE;
+              }
+              // Add rocks in stone biomes
+              if (loc.tiles[x][y].type === TileType.STONE && Math.random() > 0.8) {
+                  // Re-using rock or stone wall concept where appropriate. For now we just cluster STONE.
               }
           }
       }

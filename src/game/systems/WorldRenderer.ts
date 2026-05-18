@@ -29,7 +29,8 @@ export class WorldRenderer {
     [TileType.TREE]: '#2E7D32',
     [TileType.FOREST]: '#1B5E20',
     [TileType.SAND]: '#F0E68C',
-    [TileType.DEEP_WATER]: '#0D47A1'
+    [TileType.DEEP_WATER]: '#0D47A1',
+    [TileType.PATH]: '#D7CCC8'
   };
 
   constructor(renderer: CanvasRenderer) {

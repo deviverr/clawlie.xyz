@@ -13,7 +13,8 @@ export enum TileType {
   TREE = 'tree',
   SAND = 'sand',
   FOREST = 'forest',
-  DEEP_WATER = 'deep_water'
+  DEEP_WATER = 'deep_water',
+  PATH = 'path'
 }
 
 export interface Tile {
