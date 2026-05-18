@@ -12,6 +12,7 @@ export class InputManager {
   private mouse: MouseState;
   private eventManager: EventManager;
   private canvas: HTMLCanvasElement | null = null;
+  private virtualMovement = { x: 0, y: 0 };
 
   private constructor() {
     this.keys = new Set();
@@ -48,6 +49,33 @@ export class InputManager {
 
   public isMouseDown(): boolean {
     return this.mouse.isDown;
+  }
+
+  public setVirtualMovement(x: number, y: number): void {
+    const length = Math.hypot(x, y);
+    if (length > 1) {
+      this.virtualMovement = { x: x / length, y: y / length };
+    } else {
+      this.virtualMovement = { x, y };
+    }
+  }
+
+  public clearVirtualMovement(): void {
+    this.virtualMovement = { x: 0, y: 0 };
+  }
+
+  public getMovementVector(): { x: number; y: number } {
+    let x = this.virtualMovement.x;
+    let y = this.virtualMovement.y;
+
+    if (this.isKeyPressed('w') || this.isKeyPressed('arrowup')) y -= 1;
+    if (this.isKeyPressed('s') || this.isKeyPressed('arrowdown')) y += 1;
+    if (this.isKeyPressed('a') || this.isKeyPressed('arrowleft')) x -= 1;
+    if (this.isKeyPressed('d') || this.isKeyPressed('arrowright')) x += 1;
+
+    const length = Math.hypot(x, y);
+    if (length > 1) return { x: x / length, y: y / length };
+    return { x, y };
   }
 
   private onKeyDown(e: KeyboardEvent): void {

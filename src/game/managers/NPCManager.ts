@@ -1,4 +1,5 @@
 import { EventManager } from '../../core/EventManager';
+import { AssetLoader } from '../../utils/AssetLoader';
 
 export interface NPC {
   id: string;
@@ -14,10 +15,12 @@ export interface NPC {
 export class NPCManager {
   private static instance: NPCManager;
   private eventManager: EventManager;
+  private assetLoader: AssetLoader;
   private npcs: NPC[] = [];
 
   private constructor() {
     this.eventManager = EventManager.getInstance();
+    this.assetLoader = AssetLoader.getInstance();
     this.spawnDefaultNPCs();
   }
 
@@ -35,7 +38,7 @@ export class NPCManager {
       role: 'Town Mayor',
       x: 400,
       y: 400,
-      portrait: '/assets/sprites/blue_character/full_sprite_blue.png',
+      portrait: this.assetLoader.resolveAssetPath('assets/sprites/blue_character/full_sprite_blue.png'),
       dialogue: [
         "Welcome to Clawlie.XYZ!",
         "It's a beautiful day for farming.",
@@ -50,7 +53,7 @@ export class NPCManager {
       role: 'Animal Specialist',
       x: 800,
       y: 300,
-      portrait: '/assets/sprites/green_character/full_sprite_green.png',
+      portrait: this.assetLoader.resolveAssetPath('assets/sprites/green_character/full_sprite_green.png'),
       dialogue: [
         "I love animals, don't you?",
         "Make sure to feed your chickens every day!",

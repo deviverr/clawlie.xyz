@@ -23,23 +23,12 @@ export class GrowthSystem {
         const config = CROPS[tile.cropId];
         if (!config) continue;
 
-        // Growth logic: Needs water
         if (tile.waterLevel > 0) {
-          // Chance to grow
-          if (Math.random() > 0.3) {
-             // Increment stage if not max
-             if (tile.cropStage < config.stages) {
-                // Simplified: 1 stage per hour if watered? Too fast.
-                // Let's use a probability or a counter.
-                // For now: 10% chance to grow a stage per hour if watered.
-                if (Math.random() < 0.1) {
-                  this.world.setTile(x, y, { cropStage: tile.cropStage + 1 });
-                }
-             }
+          if (tile.cropStage < config.stages) {
+            this.world.setTile(x, y, { cropStage: tile.cropStage + 1 });
           }
-          
-          // Evaporation
-          this.world.setTile(x, y, { waterLevel: Math.max(0, tile.waterLevel - 10) });
+
+          this.world.setTile(x, y, { waterLevel: Math.max(0, tile.waterLevel - 25) });
         }
       }
     }

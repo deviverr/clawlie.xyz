@@ -39,7 +39,6 @@ export class MockBackend {
 
   public async saveGame(data: any): Promise<boolean> {
     await this.delay();
-    console.log('[Backend] Game Saved', data);
     localStorage.setItem('farming_sim_save', JSON.stringify(data));
     return true;
   }

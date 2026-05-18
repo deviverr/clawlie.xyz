@@ -3,6 +3,7 @@ import { WorldManager } from './WorldManager';
 import { InventoryManager } from './InventoryManager';
 import { EconomyManager } from './EconomyManager';
 import { TimeManager } from './TimeManager';
+import { QuestManager } from './QuestManager';
 
 export class SaveManager {
   private static instance: SaveManager;
@@ -13,6 +14,7 @@ export class SaveManager {
   private inventory: InventoryManager;
   private economy: EconomyManager;
   private time: TimeManager;
+  private quests: QuestManager;
 
   private constructor() {
     this.backend = MockBackend.getInstance();
@@ -20,6 +22,7 @@ export class SaveManager {
     this.inventory = InventoryManager.getInstance();
     this.economy = EconomyManager.getInstance();
     this.time = TimeManager.getInstance();
+    this.quests = QuestManager.getInstance();
 
     // Auto-save every minute? Or manual.
     // Let's expose save/load.
@@ -43,7 +46,8 @@ export class SaveManager {
         day: this.time.day,
         hour: this.time.hour,
         minute: this.time.minute
-      }
+      },
+      quests: this.quests.serialize()
     };
     return await this.backend.saveGame(data);
   }
@@ -79,6 +83,8 @@ export class SaveManager {
       this.time.hour = data.time.hour;
       this.time.minute = data.time.minute;
     }
+
+    if (data.quests) this.quests.deserialize(data.quests);
 
     return true;
   }

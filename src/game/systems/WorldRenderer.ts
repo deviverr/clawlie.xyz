@@ -13,6 +13,7 @@ export class WorldRenderer {
   private npcManager: NPCManager;
   private timeManager: TimeManager;
   private assetLoader: AssetLoader;
+  private readonly characterSize = 64;
 
   // Cache colors
   private colors: Record<TileType, string> = {
@@ -76,10 +77,17 @@ export class WorldRenderer {
         }
 
         if (tile.cropId) {
-          ctx.fillStyle = '#8BC34A'; 
-          const size = Math.min(tileSize, (tile.cropStage + 1) * 8); 
+          const cropColors: Record<string, string> = {
+            wheat: '#f6d365',
+            corn: '#ffd54f',
+            carrot: '#ff8a3d'
+          };
+          ctx.fillStyle = cropColors[tile.cropId] || '#8BC34A';
+          const size = Math.min(tileSize - 6, 8 + tile.cropStage * 6);
           const offset = (tileSize - size) / 2;
-          ctx.fillRect(screenX + offset, screenY + offset, size, size);
+          ctx.fillRect(screenX + offset, screenY + tileSize - offset - size, size, size);
+          ctx.fillStyle = '#2E7D32';
+          ctx.fillRect(screenX + tileSize / 2 - 2, screenY + tileSize - offset - size - 6, 4, 8);
         }
       }
     }
@@ -90,7 +98,7 @@ export class WorldRenderer {
         mpManager.getRemotePlayers().forEach((p: any) => {
             const sprite = this.assetLoader.getImage(p.skin);
             if (sprite) {
-                this.renderer.drawSprite(sprite, 0, 0, 32, 32, p.x - 16, p.y - 16, 32, 32);
+                this.drawCharacterSprite(sprite, p.x, p.y);
             }
             ctx.fillStyle = 'white';
             ctx.font = '8px "Press Start 2P"';
@@ -103,7 +111,7 @@ export class WorldRenderer {
     this.npcManager.getNPCs().forEach(npc => {
       const npcSprite = this.assetLoader.getImage('player_red'); 
       if (npcSprite) {
-        this.renderer.drawSprite(npcSprite, 0, 0, 32, 32, npc.x - 16, npc.y - 16, 32, 32);
+        this.drawCharacterSprite(npcSprite, npc.x, npc.y);
       }
       ctx.fillStyle = '#ffca28';
       ctx.font = '8px "Press Start 2P"';
@@ -114,7 +122,7 @@ export class WorldRenderer {
     // 4. Draw Player
     const playerSprite = this.assetLoader.getImage(game.playerSkin);
     if (playerSprite) {
-       this.renderer.drawSprite(playerSprite, 0, 0, 32, 32, game.playerX - 16, game.playerY - 16, 32, 32);
+       this.drawCharacterSprite(playerSprite, game.playerX, game.playerY);
     }
     ctx.fillStyle = '#4CAF50';
     ctx.font = '8px "Press Start 2P"';
@@ -123,11 +131,24 @@ export class WorldRenderer {
 
     // 4. Draw Animals
     this.animalsManager.getAnimals().forEach(animal => {
-      let color = '#FFFFFF'; // White for chicken
-      if (animal.type === 'cow') color = '#A1887F'; // Brown
-      if (animal.type === 'sheep') color = '#E0E0E0'; // Light Grey
-      
-      this.renderer.drawRect(animal.x - 10, animal.y - 10, 20, 20, color);
+      let color = '#FFFFFF';
+      let accent = '#fbc02d';
+      if (animal.type === 'cow') {
+        color = '#A1887F';
+        accent = '#3e2723';
+      }
+      if (animal.type === 'sheep') {
+        color = '#E0E0E0';
+        accent = '#9E9E9E';
+      }
+
+      ctx.fillStyle = color;
+      ctx.fillRect(animal.x - 18, animal.y - 14, 28, 20);
+      ctx.fillRect(animal.x + 6, animal.y - 20, 16, 16);
+      ctx.fillStyle = accent;
+      ctx.fillRect(animal.x + 14, animal.y - 15, 3, 3);
+      ctx.fillRect(animal.x - 14, animal.y + 6, 5, 8);
+      ctx.fillRect(animal.x + 4, animal.y + 6, 5, 8);
       
       if (animal.isProductive) {
         ctx.fillStyle = 'gold';
@@ -150,14 +171,25 @@ export class WorldRenderer {
     else if (hour < 7) opacity = (7 - hour) / 2 * 0.4; // Sunrise
 
     if (opacity > 0) {
-      // Use world coordinates or screen? 
-      // Since it's an overlay for the whole world, we can draw a giant rect in screen space
-      // or just enough to cover the viewport.
-      const oldTransform = ctx.getTransform();
-      ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset to screen space
+      ctx.save();
+      this.renderer.resetTransform();
       ctx.fillStyle = `rgba(0, 0, 50, ${opacity})`;
       ctx.fillRect(0, 0, this.renderer.viewportWidth, this.renderer.viewportHeight);
-      ctx.setTransform(oldTransform);
+      ctx.restore();
     }
+  }
+
+  private drawCharacterSprite(sprite: HTMLImageElement, x: number, y: number): void {
+    this.renderer.drawSprite(
+      sprite,
+      0,
+      0,
+      32,
+      32,
+      x - this.characterSize / 2,
+      y - this.characterSize + 12,
+      this.characterSize,
+      this.characterSize
+    );
   }
 }

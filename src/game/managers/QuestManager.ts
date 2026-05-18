@@ -9,6 +9,7 @@ export interface Quest {
   requirements: { type: string; target: string; count: number }[];
   rewards: { type: string; id?: string; amount: number }[];
   isCompleted: boolean;
+  progress?: Record<string, number>;
 }
 
 export class QuestManager {
@@ -25,6 +26,9 @@ export class QuestManager {
     this.economyManager = EconomyManager.getInstance();
 
     this.eventManager.on('CROP_HARVESTED', (cropId: string) => this.checkProgress('harvest', cropId));
+    this.eventManager.on('ITEM_SOLD', (itemId: string) => this.checkProgress('sell', itemId));
+    this.eventManager.on('SEED_BOUGHT', (itemId: string) => this.checkProgress('buy_seed', itemId));
+    this.eventManager.on('ANIMAL_PRODUCT_COLLECTED', (itemId: string) => this.checkProgress('collect_product', itemId));
   }
 
   public static getInstance(): QuestManager {
@@ -35,6 +39,7 @@ export class QuestManager {
   }
 
   public addQuest(quest: Quest): void {
+    quest.progress ||= {};
     this.activeQuests.push(quest);
     this.eventManager.emit('QUEST_ADDED', quest);
   }
@@ -43,14 +48,12 @@ export class QuestManager {
     this.activeQuests.forEach(quest => {
       if (quest.isCompleted) return;
 
-      const requirement = quest.requirements.find(r => r.type === type && r.target === target);
+      const requirement = quest.requirements.find(r => r.type === type && (r.target === target || r.target === 'any'));
       if (requirement) {
-         // Check total inventory or cumulative action
-         // For now, let's just check inventory
-         const count = this.inventoryManager.getCount(target);
-         if (count >= requirement.count) {
-           this.completeQuest(quest.id);
-         }
+         const key = this.getRequirementKey(requirement);
+         quest.progress ||= {};
+         quest.progress[key] = Math.min(requirement.count, (quest.progress[key] || 0) + 1);
+         if (this.isQuestReady(quest)) this.completeQuest(quest.id);
       }
     });
   }
@@ -76,5 +79,35 @@ export class QuestManager {
 
   public getActiveQuests(): Quest[] {
     return this.activeQuests;
+  }
+
+  public getProgress(quest: Quest, requirement: { type: string; target: string; count: number }): number {
+    return Math.min(requirement.count, quest.progress?.[this.getRequirementKey(requirement)] || 0);
+  }
+
+  public serialize(): Quest[] {
+    return this.activeQuests.map(quest => ({
+      ...quest,
+      requirements: quest.requirements.map(requirement => ({ ...requirement })),
+      rewards: quest.rewards.map(reward => ({ ...reward })),
+      progress: { ...(quest.progress || {}) }
+    }));
+  }
+
+  public deserialize(quests: Quest[]): void {
+    if (!Array.isArray(quests)) return;
+    this.activeQuests = quests.map(quest => ({
+      ...quest,
+      progress: { ...(quest.progress || {}) }
+    }));
+    this.eventManager.emit('QUEST_ADDED', this.activeQuests);
+  }
+
+  private isQuestReady(quest: Quest): boolean {
+    return quest.requirements.every(requirement => this.getProgress(quest, requirement) >= requirement.count);
+  }
+
+  private getRequirementKey(requirement: { type: string; target: string }): string {
+    return `${requirement.type}:${requirement.target}`;
   }
 }

@@ -14,6 +14,9 @@ import { WorldManager } from '../game/managers/WorldManager';
 import { NPCManager, NPC } from '../game/managers/NPCManager';
 import { MultiplayerManager, RemotePlayer } from '../game/managers/MultiplayerManager';
 import { TileType } from '../types';
+import { CROPS } from '../config/crops';
+import { AssetLoader } from '../utils/AssetLoader';
+import { InputManager } from '../core/InputManager';
 
 export class UIManager {
   private static instance: UIManager;
@@ -32,6 +35,8 @@ export class UIManager {
   private worldManager: WorldManager;
   private npcManager: NPCManager;
   private multiplayerManager: MultiplayerManager;
+  private assetLoader: AssetLoader;
+  private inputManager: InputManager;
 
   private uiLayer: HTMLElement;
   private selectedItem: string | null = null; 
@@ -40,6 +45,7 @@ export class UIManager {
 
   private minimapCanvas: HTMLCanvasElement | null = null;
   private minimapCtx: CanvasRenderingContext2D | null = null;
+  private toastTimer: number | null = null;
 
   private constructor() {
     this.eventManager = EventManager.getInstance();
@@ -57,6 +63,8 @@ export class UIManager {
     this.worldManager = WorldManager.getInstance();
     this.npcManager = NPCManager.getInstance();
     this.multiplayerManager = MultiplayerManager.getInstance();
+    this.assetLoader = AssetLoader.getInstance();
+    this.inputManager = InputManager.getInstance();
 
     this.uiLayer = document.getElementById('ui-layer')!;
     
@@ -66,7 +74,10 @@ export class UIManager {
     this.eventManager.on('SEASON_CHANGED', (season: string) => this.updateEnvironment(season));
     this.eventManager.on('WEATHER_CHANGED', (weather: string) => this.updateEnvironment(undefined, weather));
     this.eventManager.on('QUEST_ADDED', () => this.refreshActivePanel());
-    this.eventManager.on('QUEST_COMPLETED', () => this.refreshActivePanel());
+    this.eventManager.on('QUEST_COMPLETED', (quest: any) => {
+      this.showToast(`Quest complete: ${quest.title}`);
+      this.refreshActivePanel();
+    });
     this.eventManager.on('INTERACT_CASINO', () => this.togglePanel('casino'));
     this.eventManager.on('LOCATION_CHANGED', () => this.renderMinimap());
 
@@ -115,15 +126,15 @@ export class UIManager {
       <h2 style="font-size: 16px; margin-bottom: 20px;">Choose Your Character</h2>
       <div class="character-grid">
         <div class="char-option selected" data-skin="player_blue">
-          <img src="/assets/sprites/blue_character/full_sprite_blue.png" style="object-position: 0 0; object-fit: none; width: 32px; height: 32px; transform: scale(1.5);">
+          <img src="${this.assetLoader.resolveAssetPath('assets/sprites/blue_character/full_sprite_blue.png')}" style="object-position: 0 0; object-fit: none; width: 32px; height: 32px; transform: scale(1.5);">
           <p>Blue</p>
         </div>
         <div class="char-option" data-skin="player_green">
-          <img src="/assets/sprites/green_character/full_sprite_green.png" style="object-position: 0 0; object-fit: none; width: 32px; height: 32px; transform: scale(1.5);">
+          <img src="${this.assetLoader.resolveAssetPath('assets/sprites/green_character/full_sprite_green.png')}" style="object-position: 0 0; object-fit: none; width: 32px; height: 32px; transform: scale(1.5);">
           <p>Green</p>
         </div>
         <div class="char-option" data-skin="player_red">
-          <img src="/assets/sprites/red_character/full_sprite_red.png" style="object-position: 0 0; object-fit: none; width: 32px; height: 32px; transform: scale(1.5);">
+          <img src="${this.assetLoader.resolveAssetPath('assets/sprites/red_character/full_sprite_red.png')}" style="object-position: 0 0; object-fit: none; width: 32px; height: 32px; transform: scale(1.5);">
           <p>Red</p>
         </div>
       </div>
@@ -185,6 +196,7 @@ export class UIManager {
     this.setupMinimap();
     this.setupPlayerList();
     this.setupAds();
+    this.setupTouchControls();
     this.updateToolbar();
     this.updateMoney(this.economyManager.getMoney());
     this.updateTime();
@@ -213,7 +225,7 @@ export class UIManager {
     
     this.uiLayer.appendChild(hudTop);
 
-    document.getElementById('save-btn')!.onclick = () => this.saveManager.saveGame().then(() => alert('Saved!'));
+    document.getElementById('save-btn')!.onclick = () => this.saveManager.saveGame().then(() => this.showToast('Game saved'));
     document.getElementById('settings-btn-hud')!.onclick = () => this.showSettings();
 
     const toolbar = document.createElement('div');
@@ -313,6 +325,72 @@ export class UIManager {
       ad.className = 'ad-banner';
       ad.innerHTML = 'AD BANNER PLACEHOLDER - CLAWLIE.XYZ';
       this.uiLayer.appendChild(ad);
+  }
+
+  private setupTouchControls(): void {
+      const controls = document.createElement('div');
+      controls.id = 'touch-controls';
+      controls.innerHTML = `
+        <div id="touch-joystick">
+          <div id="touch-stick"></div>
+        </div>
+        <div id="touch-actions">
+          <button class="touch-btn" id="touch-zoom-in">+</button>
+          <button class="touch-btn primary" id="touch-use">Use</button>
+          <button class="touch-btn" id="touch-interact">Talk</button>
+          <button class="touch-btn" id="touch-cycle">Tool</button>
+          <button class="touch-btn" id="touch-menu">Menu</button>
+          <button class="touch-btn" id="touch-zoom-out">-</button>
+        </div>
+      `;
+      this.uiLayer.appendChild(controls);
+
+      const joystick = controls.querySelector('#touch-joystick') as HTMLElement;
+      const stick = controls.querySelector('#touch-stick') as HTMLElement;
+      let activePointer: number | null = null;
+
+      const moveStick = (event: PointerEvent) => {
+        if (activePointer !== event.pointerId) return;
+        const rect = joystick.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        const max = rect.width / 2 - 18;
+        const dx = event.clientX - centerX;
+        const dy = event.clientY - centerY;
+        const distance = Math.min(max, Math.hypot(dx, dy));
+        const angle = Math.atan2(dy, dx);
+        const x = Math.cos(angle) * distance;
+        const y = Math.sin(angle) * distance;
+        stick.style.transform = `translate(${x}px, ${y}px)`;
+        this.inputManager.setVirtualMovement(x / max, y / max);
+      };
+
+      joystick.onpointerdown = (event) => {
+        activePointer = event.pointerId;
+        joystick.setPointerCapture(event.pointerId);
+        moveStick(event);
+        event.preventDefault();
+      };
+      joystick.onpointermove = (event) => {
+        moveStick(event);
+        event.preventDefault();
+      };
+      const releaseStick = (event: PointerEvent) => {
+        if (activePointer !== event.pointerId) return;
+        activePointer = null;
+        stick.style.transform = 'translate(0, 0)';
+        this.inputManager.clearVirtualMovement();
+        event.preventDefault();
+      };
+      joystick.onpointerup = releaseStick;
+      joystick.onpointercancel = releaseStick;
+
+      (controls.querySelector('#touch-use') as HTMLButtonElement).onclick = () => this.emitCenterUse();
+      (controls.querySelector('#touch-interact') as HTMLButtonElement).onclick = () => this.eventManager.emit('INPUT_KEY_E_PRESSED');
+      (controls.querySelector('#touch-cycle') as HTMLButtonElement).onclick = () => this.selectNextTool();
+      (controls.querySelector('#touch-menu') as HTMLButtonElement).onclick = () => this.togglePanel('quest');
+      (controls.querySelector('#touch-zoom-in') as HTMLButtonElement).onclick = () => this.adjustZoom(0.25);
+      (controls.querySelector('#touch-zoom-out') as HTMLButtonElement).onclick = () => this.adjustZoom(-0.25);
   }
 
   public renderMinimap(): void {
@@ -462,7 +540,10 @@ export class UIManager {
       this.questManager.getActiveQuests().forEach(q => {
         const item = document.createElement('div');
         item.className = `quest-item ${q.isCompleted ? 'completed' : ''}`;
-        item.innerHTML = `<strong>${q.title}</strong><br><small>${q.description}</small>`;
+        const progress = q.requirements
+          .map(req => `${this.questManager.getProgress(q, req)}/${req.count}`)
+          .join(', ');
+        item.innerHTML = `<strong>${q.title}</strong><br><small>${q.description}</small><br><small>${q.isCompleted ? 'Complete' : progress}</small>`;
         content.appendChild(item);
       });
     } else if (type === 'craft') {
@@ -484,6 +565,47 @@ export class UIManager {
       });
       content.appendChild(grid);
     } else if (type === 'shop') {
+      const seedSection = document.createElement('div');
+      seedSection.className = 'shop-section';
+      seedSection.innerHTML = '<h3>Seeds</h3>';
+      Object.values(CROPS).forEach(crop => {
+        const row = document.createElement('div');
+        row.className = 'quest-item shop-row';
+        row.innerHTML = `
+          <span>${crop.name} Seeds</span>
+          <button class="pixel-btn" style="margin: 0; padding: 4px 8px;">$${crop.seedPrice}</button>
+        `;
+        row.querySelector('button')!.onclick = () => this.buySeed(crop.id);
+        seedSection.appendChild(row);
+      });
+      content.appendChild(seedSection);
+
+      const sellSection = document.createElement('div');
+      sellSection.className = 'shop-section';
+      sellSection.innerHTML = '<h3>Farm Stand</h3>';
+      const sellable = this.getSellableItems();
+      if (sellable.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'quest-item';
+        empty.textContent = 'Harvest crops or collect animal products to sell here.';
+        sellSection.appendChild(empty);
+      } else {
+        sellable.forEach(({ id, count, price }) => {
+          const row = document.createElement('div');
+          row.className = 'quest-item shop-row';
+          row.innerHTML = `
+            <span>${this.getItemName(id)} x${count}</span>
+            <button class="pixel-btn" style="margin: 0; padding: 4px 8px;">Sell $${price}</button>
+          `;
+          row.querySelector('button')!.onclick = () => this.sellItem(id);
+          sellSection.appendChild(row);
+        });
+      }
+      content.appendChild(sellSection);
+
+      const premiumTitle = document.createElement('h3');
+      premiumTitle.textContent = 'Premium Extras';
+      content.appendChild(premiumTitle);
       this.monetizationManager.getShopItems().forEach(i => {
         const item = document.createElement('div');
         item.className = 'quest-item';
@@ -498,10 +620,10 @@ export class UIManager {
         `;
         item.querySelector('button')!.onclick = () => {
            if (this.monetizationManager.purchaseItem(i.id)) {
-              alert('Purchased!');
+              this.showToast('Purchased');
               this.updateGems();
            } else {
-              alert('Not enough currency!');
+              this.showToast('Not enough currency');
            }
         };
         content.appendChild(item);
@@ -622,5 +744,92 @@ export class UIManager {
   private selectItem(id: string): void {
     this.selectedItem = id;
     this.updateToolbar(); 
+  }
+
+  private selectNextTool(): void {
+    const ids = ['hoe', 'water', 'scythe', ...Array.from(this.inventoryManager.getItems().keys())];
+    const current = Math.max(0, ids.indexOf(this.selectedItem || 'hoe'));
+    this.selectItem(ids[(current + 1) % ids.length]);
+  }
+
+  private emitCenterUse(): void {
+    const game = (window as any).gameInstance;
+    const renderer = game?.renderer;
+    const x = renderer?.viewportWidth ? renderer.viewportWidth / 2 : window.innerWidth / 2;
+    const y = renderer?.viewportHeight ? renderer.viewportHeight / 2 : window.innerHeight / 2;
+    this.eventManager.emit('INPUT_MOUSE_DOWN', { x, y, button: 0 });
+  }
+
+  private adjustZoom(delta: number): void {
+    const camera = (window as any).gameInstance?.renderer?.camera;
+    if (camera) camera.setZoom(camera.zoom + delta);
+  }
+
+  private buySeed(cropId: string): void {
+    const crop = CROPS[cropId];
+    if (!crop) return;
+    if (!this.economyManager.spendMoney(crop.seedPrice)) {
+      this.showToast('Not enough gold');
+      return;
+    }
+    const itemId = `${cropId}_seed`;
+    this.inventoryManager.addItem(itemId, 1);
+    this.eventManager.emit('SEED_BOUGHT', itemId);
+    this.showToast(`Bought ${crop.name} seeds`);
+    this.refreshActivePanel();
+  }
+
+  private sellItem(itemId: string): void {
+    const price = this.getSellPrice(itemId);
+    if (price <= 0 || !this.inventoryManager.removeItem(itemId, 1)) {
+      this.showToast('Nothing to sell');
+      return;
+    }
+    this.economyManager.addMoney(price);
+    this.eventManager.emit('ITEM_SOLD', itemId);
+    this.showToast(`Sold ${this.getItemName(itemId)} for $${price}`);
+    this.refreshActivePanel();
+  }
+
+  private getSellableItems(): { id: string; count: number; price: number }[] {
+    return Array.from(this.inventoryManager.getItems().entries())
+      .map(([id, count]) => ({ id, count, price: this.getSellPrice(id) }))
+      .filter(item => item.price > 0 && item.count > 0);
+  }
+
+  private getSellPrice(itemId: string): number {
+    if (CROPS[itemId]) return CROPS[itemId].sellPrice;
+    const productPrices: Record<string, number> = {
+      egg: 18,
+      milk: 35,
+      wool: 45,
+      mayonnaise_jar: 60,
+      cheese_wheel: 90,
+      bread_loaf: 55
+    };
+    return productPrices[itemId] || 0;
+  }
+
+  private getItemName(itemId: string): string {
+    if (CROPS[itemId]) return CROPS[itemId].name;
+    if (itemId.endsWith('_seed')) {
+      const crop = CROPS[itemId.replace('_seed', '')];
+      if (crop) return `${crop.name} Seeds`;
+    }
+    return itemId.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  }
+
+  private showToast(message: string): void {
+    let toast = document.getElementById('game-toast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'game-toast';
+      toast.className = 'ui-panel';
+      this.uiLayer.appendChild(toast);
+    }
+    toast.textContent = message;
+    toast.classList.add('visible');
+    if (this.toastTimer) window.clearTimeout(this.toastTimer);
+    this.toastTimer = window.setTimeout(() => toast?.classList.remove('visible'), 2200);
   }
 }

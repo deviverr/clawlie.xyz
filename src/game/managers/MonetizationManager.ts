@@ -1,4 +1,5 @@
 import { EventManager } from '../../core/EventManager';
+import { EconomyManager } from './EconomyManager';
 
 export interface ShopItem {
   id: string;
@@ -11,6 +12,7 @@ export interface ShopItem {
 export class MonetizationManager {
   private static instance: MonetizationManager;
   private eventManager: EventManager;
+  private economyManager: EconomyManager;
 
   private premiumCurrency: number = 0;
   private shopItems: ShopItem[] = [
@@ -21,6 +23,7 @@ export class MonetizationManager {
 
   private constructor() {
     this.eventManager = EventManager.getInstance();
+    this.economyManager = EconomyManager.getInstance();
   }
 
   public static getInstance(): MonetizationManager {
@@ -55,7 +58,11 @@ export class MonetizationManager {
         return true;
       }
     }
-    // Gold handled by EconomyManager (simulated integration)
+    if (item.currency === 'gold' && this.economyManager.spendMoney(item.price)) {
+      this.eventManager.emit('PURCHASE_SUCCESS', item);
+      return true;
+    }
+
     return false;
   }
 

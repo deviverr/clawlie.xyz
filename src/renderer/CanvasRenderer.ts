@@ -3,6 +3,9 @@ import { Camera } from './Camera';
 export class CanvasRenderer {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
+  private logicalWidth: number = 0;
+  private logicalHeight: number = 0;
+  private pixelRatio: number = 1;
   public camera: Camera;
 
   constructor(canvasId: string) {
@@ -18,39 +21,54 @@ export class CanvasRenderer {
     this.ctx = ctx;
 
     // Initialize Camera
-    this.camera = new Camera(this.canvas.width, this.canvas.height);
+    this.camera = new Camera(window.innerWidth, window.innerHeight);
 
     // Handle resizing
     window.addEventListener('resize', () => this.resize());
+    window.visualViewport?.addEventListener('resize', () => this.resize());
     this.resize();
   }
 
   public get viewportWidth(): number {
-    return this.canvas.width;
+    return this.logicalWidth;
   }
 
   public get viewportHeight(): number {
-    return this.canvas.height;
+    return this.logicalHeight;
   }
 
   private resize(): void {
-    this.canvas.width = window.innerWidth;
-    this.canvas.height = window.innerHeight;
-    this.camera.updateViewport(this.canvas.width, this.canvas.height);
-    // Restore context settings after resize if needed (e.g., pixel art smoothing)
+    const viewport = window.visualViewport;
+    this.logicalWidth = Math.max(320, Math.floor(viewport?.width ?? window.innerWidth));
+    this.logicalHeight = Math.max(320, Math.floor(viewport?.height ?? window.innerHeight));
+    this.pixelRatio = Math.max(1, Math.min(window.devicePixelRatio || 1, 2));
+
+    this.canvas.style.width = `${this.logicalWidth}px`;
+    this.canvas.style.height = `${this.logicalHeight}px`;
+    this.canvas.width = Math.floor(this.logicalWidth * this.pixelRatio);
+    this.canvas.height = Math.floor(this.logicalHeight * this.pixelRatio);
+    this.resetTransform();
+
+    this.camera.updateViewport(this.logicalWidth, this.logicalHeight);
     this.ctx.imageSmoothingEnabled = false;
   }
 
   public clear(): void {
+    this.resetTransform();
     this.ctx.fillStyle = '#000000'; // Or sky color
-    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    this.ctx.fillRect(0, 0, this.logicalWidth, this.logicalHeight);
+  }
+
+  public resetTransform(): void {
+    this.ctx.setTransform(this.pixelRatio, 0, 0, this.pixelRatio, 0, 0);
+    this.ctx.imageSmoothingEnabled = false;
   }
 
   // Draw in world coordinates (affected by camera)
   public beginWorldDraw(): void {
     this.ctx.save();
     // Translate to center, scale, translate back
-    this.ctx.translate(this.canvas.width / 2, this.canvas.height / 2);
+    this.ctx.translate(this.logicalWidth / 2, this.logicalHeight / 2);
     this.ctx.scale(this.camera.zoom, this.camera.zoom);
     this.ctx.translate(-this.camera.x, -this.camera.y);
   }

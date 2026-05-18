@@ -112,15 +112,7 @@ class Game {
     this.animalsManager.addAnimal(AnimalType.CHICKEN, this.playerX + 50, this.playerY + 50);
     this.animalsManager.addAnimal(AnimalType.COW, this.playerX - 100, this.playerY + 80);
 
-    // Initial Quest
-    this.questManager.addQuest({
-      id: 'first_harvest',
-      title: 'The First Harvest',
-      description: 'Harvest your first crop to prove your farming skills.',
-      requirements: [{ type: 'harvest', target: 'parsnip', count: 1 }],
-      rewards: [{ type: 'money', amount: 500 }, { type: 'item', id: 'parsnip_seed', amount: 5 }],
-      isCompleted: false
-    });
+    this.setupV1Quests();
 
     console.log('Farming Sim Engine Initialized');
   }
@@ -128,6 +120,51 @@ class Game {
   public async start(): Promise<void> {
     await this.assetLoader.loadAll();
     this.loop.start();
+  }
+
+  private setupV1Quests(): void {
+    [
+      {
+        id: 'first_harvest',
+        title: 'The First Harvest',
+        description: 'Harvest wheat to prove your farming skills.',
+        requirements: [{ type: 'harvest', target: 'wheat', count: 1 }],
+        rewards: [{ type: 'money', amount: 75 }, { type: 'item', id: 'carrot_seed', amount: 3 }],
+        isCompleted: false
+      },
+      {
+        id: 'market_day',
+        title: 'Market Day',
+        description: 'Sell any farm product at the shop.',
+        requirements: [{ type: 'sell', target: 'any', count: 1 }],
+        rewards: [{ type: 'money', amount: 125 }],
+        isCompleted: false
+      },
+      {
+        id: 'better_seeds',
+        title: 'Better Seeds',
+        description: 'Buy corn seeds from the shop.',
+        requirements: [{ type: 'buy_seed', target: 'corn_seed', count: 1 }],
+        rewards: [{ type: 'item', id: 'wheat_seed', amount: 4 }],
+        isCompleted: false
+      },
+      {
+        id: 'animal_friend',
+        title: 'Animal Friend',
+        description: 'Collect an animal product from your farm animals.',
+        requirements: [{ type: 'collect_product', target: 'any', count: 1 }],
+        rewards: [{ type: 'money', amount: 250 }],
+        isCompleted: false
+      },
+      {
+        id: 'farm_established',
+        title: 'Farm Established',
+        description: 'Complete your starter farm by selling three farm products.',
+        requirements: [{ type: 'sell', target: 'any', count: 3 }],
+        rewards: [{ type: 'money', amount: 500 }],
+        isCompleted: false
+      }
+    ].forEach(quest => this.questManager.addQuest(quest));
   }
 
   private handleInteraction(e: { x: number, y: number, button: number }): void {
@@ -144,6 +181,7 @@ class Game {
          const product = this.animalsManager.collectProduct(clickedAnimal.id);
          if (product) {
            this.inventoryManager.addItem(product, 1);
+           this.eventManager.emit('ANIMAL_PRODUCT_COLLECTED', product);
            console.log(`Collected ${product} from ${clickedAnimal.type}`);
          }
        } else {
@@ -217,10 +255,9 @@ class Game {
     let dx = 0;
     let dy = 0;
 
-    if (this.input.isKeyPressed('w') || this.input.isKeyPressed('arrowup')) dy -= speed;
-    if (this.input.isKeyPressed('s') || this.input.isKeyPressed('arrowdown')) dy += speed;
-    if (this.input.isKeyPressed('a') || this.input.isKeyPressed('arrowleft')) dx -= speed;
-    if (this.input.isKeyPressed('d') || this.input.isKeyPressed('arrowright')) dx += speed;
+    const movement = this.input.getMovementVector();
+    dx = movement.x * speed;
+    dy = movement.y * speed;
 
     // Try moving X
     const nextTileX = Math.floor((this.playerX + dx) / this.worldManager.tileSize);

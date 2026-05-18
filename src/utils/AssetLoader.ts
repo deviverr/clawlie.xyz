@@ -30,12 +30,18 @@ export class AssetLoader {
     });
   }
 
+  public resolveAssetPath(path: string): string {
+    const base = import.meta.env.BASE_URL || './';
+    const cleanBase = base.endsWith('/') ? base : `${base}/`;
+    const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+    return `${cleanBase}${cleanPath}`;
+  }
+
   public async loadAll(): Promise<void> {
     const assets = [
-      { key: 'player_blue', src: '/assets/sprites/blue_character/full_sprite_blue.png' },
-      { key: 'player_green', src: '/assets/sprites/green_character/full_sprite_green.png' },
-      { key: 'player_red', src: '/assets/sprites/red_character/full_sprite_red.png' },
-      { key: 'enemy', src: '/assets/sprites/enemy.png' }
+      { key: 'player_blue', src: this.resolveAssetPath('assets/sprites/blue_character/full_sprite_blue.png') },
+      { key: 'player_green', src: this.resolveAssetPath('assets/sprites/green_character/full_sprite_green.png') },
+      { key: 'player_red', src: this.resolveAssetPath('assets/sprites/red_character/full_sprite_red.png') }
     ];
 
     await Promise.all(assets.map(asset => this.loadImage(asset.key, asset.src).catch(e => {

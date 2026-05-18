@@ -72,6 +72,9 @@ export class AnimalsManager {
     const animal = this.animals.find(a => a.id === id);
     if (animal) {
       animal.happiness = Math.min(100, animal.happiness + 20);
+      if (animal.hunger < 50 && animal.lastProducedDay !== this.timeManager.day) {
+        animal.isProductive = true;
+      }
     }
   }
 
