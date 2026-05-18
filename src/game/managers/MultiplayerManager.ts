@@ -55,19 +55,29 @@ export class MultiplayerManager {
   }
 
   private handleConnection(conn: any): void {
-      conn.on('open', () => {
+      const setupConn = () => {
           this.connections.set(conn.peer, conn);
           console.log(`Connected to: ${conn.peer}`);
+          this.eventManager.emit('PLAYER_UPDATED', { id: conn.peer, username: 'Connecting...' });
           
           conn.on('data', (data: any) => {
               this.handleData(conn.peer, data);
           });
-      });
+      };
+
+      if (conn.open) {
+          setupConn();
+      } else {
+          conn.on('open', setupConn);
+      }
 
       conn.on('close', () => {
           this.connections.delete(conn.peer);
           this.remotePlayers.delete(conn.peer);
           this.eventManager.emit('PLAYER_LEFT', conn.peer);
+      });
+      conn.on('error', (err: any) => {
+          console.log('Connection error:', err);
       });
   }
 
@@ -94,7 +104,13 @@ export class MultiplayerManager {
       this.handleConnection(conn);
   }
 
+  private lastSyncTime: number = 0;
+
   public broadcastSync(x: number, y: number, skin: string, hp: number = 100): void {
+      const now = Date.now();
+      if (now - this.lastSyncTime < 50) return; // limit to 20 fps to prevent WebRTC channel overflow
+      this.lastSyncTime = now;
+
       const data = {
           type: 'sync',
           username: this.username,

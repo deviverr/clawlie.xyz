@@ -162,6 +162,7 @@ export class UIManager {
         }
         
         this.multiplayerManager.setUsername(nickname);
+        this.audioManager.playMusic();
         this.startGame();
     };
   }
@@ -277,9 +278,9 @@ export class UIManager {
   private teleportTo(locationId: string): void {
       const targets: any = {
           'house': { x: 10, y: 13 },
-          'town': { x: 50, y: 50 },
+          'town': { x: 60, y: 60 },
           'casino': { x: 12, y: 18 },
-          'farm': { x: 50, y: 50 }
+          'farm': { x: 50, y: 55 }
       };
       const target = targets[locationId];
       if (target) {

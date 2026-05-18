@@ -37,8 +37,8 @@ export class NPCManager {
       id: 'mayor_lewis',
       name: 'Mayor Lewis',
       role: 'Town Mayor',
-      x: 400,
-      y: 400,
+      x: 60 * 32,
+      y: 60 * 32,
       locationId: 'town',
       portrait: this.assetLoader.resolveAssetPath('assets/sprites/blue_character/full_sprite_blue.png'),
       dialogue: [
@@ -53,8 +53,8 @@ export class NPCManager {
       id: 'marnie',
       name: 'Marnie',
       role: 'Animal Specialist',
-      x: 800,
-      y: 300,
+      x: 55 * 32,
+      y: 45 * 32,
       locationId: 'farm',
       portrait: this.assetLoader.resolveAssetPath('assets/sprites/green_character/full_sprite_green.png'),
       dialogue: [
@@ -82,12 +82,25 @@ export class NPCManager {
     return line;
   }
 
-  public update(_dt: number): void {
-    // Basic NPC wandering
+  public update(dt: number): void {
+    // Basic NPC wandering (smooth)
     this.npcs.forEach(npc => {
-      if (Math.random() < 0.005) {
-        npc.x += (Math.random() - 0.5) * 50;
-        npc.y += (Math.random() - 0.5) * 50;
+      // Create a target destination occasionally
+      if (!(npc as any).targetX) {
+         if (Math.random() < 0.01) {
+             (npc as any).targetX = npc.x + (Math.random() - 0.5) * 100;
+             (npc as any).targetY = npc.y + (Math.random() - 0.5) * 100;
+         }
+      } else {
+         const dx = (npc as any).targetX - npc.x;
+         const dy = (npc as any).targetY - npc.y;
+         const dist = Math.sqrt(dx*dx + dy*dy);
+         if (dist < 5) {
+             (npc as any).targetX = null;
+         } else {
+             npc.x += (dx / dist) * 20 * dt;
+             npc.y += (dy / dist) * 20 * dt;
+         }
       }
     });
   }

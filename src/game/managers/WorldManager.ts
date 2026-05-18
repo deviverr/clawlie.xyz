@@ -53,8 +53,9 @@ export class WorldManager {
   }
 
   private initializeLocations(): void {
-    // 1. Farm (100x100)
-    const farm = this.createEmptyLocation('farm', 'Your Farm', 80, 80);
+    const farmWidth = 160;
+    const farmHeight = 160;
+    const farm = this.createEmptyLocation('farm', 'Your Farm', farmWidth, farmHeight);
     this.generateComplexTerrain(farm, {
         base: TileType.GRASS,
         water: 0.02,
@@ -63,32 +64,41 @@ export class WorldManager {
         sand: 0.01
     });
     // Starting clearing for player
-    this.fillArea(farm, 35, 35, 10, 10, TileType.GRASS);
-    this.drawBuilding(farm, 38, 38, 4, 4, 'home'); 
-    farm.exits.push({ x: 40, y: 0, targetLocationId: 'town', targetX: 40, targetY: 78 });
-    farm.exits.push({ x: 40, y: 41, targetLocationId: 'house', targetX: 10, targetY: 13 });
+    this.fillArea(farm, 40, 40, 20, 20, TileType.GRASS);
+    this.drawBuilding(farm, 48, 48, 4, 4, 'home'); 
+    
+    const townExitX = Math.floor(farmWidth / 2);
+    farm.exits.push({ x: townExitX, y: 0, targetLocationId: 'town', targetX: 60, targetY: 118 });
+    farm.exits.push({ x: 50, y: 51, targetLocationId: 'house', targetX: 10, targetY: 13 });
+    
+    // Clean path to town
+    for(let i=0; i<50; i++) {
+        farm.tiles[townExitX][i].type = TileType.PATH;
+        farm.tiles[townExitX+1][i].type = TileType.PATH;
+    }
     this.locations.set('farm', farm);
 
-    // 2. Town (80x80)
-    const town = this.createEmptyLocation('town', 'Capital City', 80, 80);
-    this.fillArea(town, 0, 0, 80, 80, TileType.STONE);
-    // Roads
-    this.fillArea(town, 35, 0, 10, 80, TileType.FLOOR);
-    this.fillArea(town, 0, 35, 80, 10, TileType.FLOOR);
+    // 2. Town (120x120)
+    const townWidth = 120;
+    const townHeight = 120;
+    const town = this.createEmptyLocation('town', 'Capital City', townWidth, townHeight);
+    this.fillArea(town, 0, 0, townWidth, townHeight, TileType.GRASS);
     
-    // City Districts
-    this.drawCityBlock(town, 5, 5, 25, 25);
-    this.drawCityBlock(town, 50, 5, 25, 25);
-    this.drawCityBlock(town, 5, 50, 25, 25);
-    this.drawCityBlock(town, 50, 50, 25, 25);
+    const roadCenter = Math.floor(townWidth / 2);
+    // Roads
+    this.fillArea(town, roadCenter - 5, 0, 10, townHeight, TileType.PATH);
+    this.fillArea(town, 0, roadCenter - 5, townWidth, 10, TileType.PATH);
+    
+    // Central Plaza
+    this.fillArea(town, roadCenter - 15, roadCenter - 15, 30, 30, TileType.STONE);
 
     // Key Buildings
-    this.drawBuilding(town, 15, 15, 10, 8, 'casino');
-    this.drawBuilding(town, 55, 15, 10, 8, 'shop');
+    this.drawBuilding(town, roadCenter - 25, roadCenter - 25, 10, 8, 'casino');
+    this.drawBuilding(town, roadCenter + 15, roadCenter - 25, 10, 8, 'shop');
     
-    town.exits.push({ x: 40, y: 79, targetLocationId: 'farm', targetX: 40, targetY: 1 });
-    town.exits.push({ x: 20, y: 22, targetLocationId: 'casino', targetX: 12, targetY: 18 });
-    town.exits.push({ x: 60, y: 22, targetLocationId: 'shop_interior', targetX: 10, targetY: 13 });
+    town.exits.push({ x: roadCenter, y: townHeight - 1, targetLocationId: 'farm', targetX: townExitX, targetY: 1 });
+    town.exits.push({ x: roadCenter - 20, y: roadCenter - 18, targetLocationId: 'casino', targetX: 12, targetY: 18 });
+    town.exits.push({ x: roadCenter + 20, y: roadCenter - 18, targetLocationId: 'shop_interior', targetX: 10, targetY: 13 });
     this.locations.set('town', town);
 
     // 3. House Interior

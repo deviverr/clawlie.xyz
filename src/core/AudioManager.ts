@@ -36,6 +36,56 @@ export class AudioManager {
      events.on('MONEY_CHANGED', (amount: number) => { if (amount > 0) this.playSound('coins'); });
   }
 
+  private currentBgmOsc: OscillatorNode | null = null;
+  private currentBgmGain: GainNode | null = null;
+
+  public async playMusic(): Promise<void> {
+      if (this.isMuted) return;
+      if (this.audioContext.state === 'suspended') {
+          await this.audioContext.resume();
+      }
+      
+      if (this.currentBgmOsc) return;
+
+      const osc = this.audioContext.createOscillator();
+      const gain = this.audioContext.createGain();
+      
+      osc.type = 'triangle';
+      osc.connect(gain);
+      gain.connect(this.bgmGain);
+      
+      this.bgmGain.gain.value = 0.05; // Keep it quiet
+      osc.start();
+
+      let noteIndex = 0;
+      // Simple pentatonic scale melody
+      const notes = [261.63, 293.66, 329.63, 392.00, 440.00, 392.00, 329.63, 293.66];
+      
+      const interval = setInterval(() => {
+          if (!this.currentBgmOsc) {
+              clearInterval(interval);
+              return;
+          }
+          osc.frequency.setValueAtTime(notes[noteIndex], this.audioContext.currentTime);
+          noteIndex = (noteIndex + 1) % notes.length;
+      }, 500);
+
+      this.currentBgmOsc = osc;
+      this.currentBgmGain = gain;
+  }
+
+  public stopMusic(): void {
+      if (this.currentBgmOsc) {
+          this.currentBgmOsc.stop();
+          this.currentBgmOsc.disconnect();
+          this.currentBgmOsc = null;
+      }
+      if (this.currentBgmGain) {
+          this.currentBgmGain.disconnect();
+          this.currentBgmGain = null;
+      }
+  }
+
   public async playSound(type: string): Promise<void> {
     if (this.isMuted) return;
     if (this.audioContext.state === 'suspended') {
@@ -82,5 +132,10 @@ export class AudioManager {
 
   public toggleMute(): void {
     this.isMuted = !this.isMuted;
+    if (this.isMuted) {
+        this.stopMusic();
+    } else {
+        this.playMusic();
+    }
   }
 }
