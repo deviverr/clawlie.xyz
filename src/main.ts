@@ -55,6 +55,7 @@ class Game {
   public playerY: number;
   public playerSkin: string = 'player_blue';
   public username: string = 'Guest';
+  public hp: number = 100;
   public gameStarted: boolean = false;
 
   constructor() {
@@ -97,6 +98,19 @@ class Game {
     
         // Handle 'E' key for NPC interaction
         this.eventManager.on('INPUT_KEY_E_PRESSED', () => this.handleNPCInteraction());
+
+        // Handle incoming attacks
+        this.eventManager.on('PLAYER_ATTACKED', (damage: number) => {
+            this.hp -= damage;
+            console.log(`Attacked! HP now: ${this.hp}`);
+            this.renderer.camera.shake(10, 0.2); // Screen shake on hit
+            if (this.hp <= 0) {
+                 this.hp = 100; // Respawn reset
+                 this.playerX = 50 * this.worldManager.tileSize;
+                 this.playerY = 55 * this.worldManager.tileSize;
+                 console.log("You died and respawned.");
+            }
+        });
     
         this.eventManager.on('LOCATION_CHANGED', (data: any) => {
         this.playerX = data.x * this.worldManager.tileSize;
@@ -213,6 +227,18 @@ class Game {
       const selectedItem = this.uiManager.getSelectedItem();
       if (!selectedItem) return;
 
+      // Check PvP Hit
+      if (selectedItem === 'scythe') {
+          const clickedPlayer = this._multiplayerManager.getRemotePlayers().find(p => 
+              Math.abs(p.x - worldPos.x) < 30 && Math.abs(p.y - worldPos.y) < 30
+          );
+          if (clickedPlayer) {
+              console.log(`Hit player ${clickedPlayer.username}`);
+              this._multiplayerManager.sendAttack(clickedPlayer.id, 25);
+              return; // End interaction if we hit a player
+          }
+      }
+
       if (selectedItem === 'hoe') {
         if (tile.type === TileType.GRASS) {
           this.farmManager.till(tile);
@@ -279,7 +305,7 @@ class Game {
 
     // Broadcast position to other players
     if (this._multiplayerManager) {
-        this._multiplayerManager.broadcastSync(this.playerX, this.playerY, this.playerSkin);
+        this._multiplayerManager.broadcastSync(this.playerX, this.playerY, this.playerSkin, this.hp);
     }
 
     // Check for map exits

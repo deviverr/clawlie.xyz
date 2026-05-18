@@ -105,6 +105,14 @@ export class WorldRenderer {
             ctx.font = '8px "Press Start 2P"';
             ctx.textAlign = 'center';
             ctx.fillText(p.username, p.x, p.y - 20);
+            
+            // Health bar remote
+            if (p.hp !== undefined) {
+                ctx.fillStyle = 'red';
+                ctx.fillRect(p.x - 10, p.y - 30, 20, 4);
+                ctx.fillStyle = 'green';
+                ctx.fillRect(p.x - 10, p.y - 30, 20 * (p.hp / 100), 4);
+            }
         });
     }
 
@@ -129,6 +137,12 @@ export class WorldRenderer {
     ctx.font = '8px "Press Start 2P"';
     ctx.textAlign = 'center';
     ctx.fillText(game.username || 'YOU', game.playerX, game.playerY - 20);
+
+    // Health bar local
+    ctx.fillStyle = 'red';
+    ctx.fillRect(game.playerX - 10, game.playerY - 30, 20, 4);
+    ctx.fillStyle = 'green';
+    ctx.fillRect(game.playerX - 10, game.playerY - 30, 20 * (game.hp / 100), 4);
 
     // 4. Draw Animals
     this.animalsManager.getAnimals().forEach(animal => {

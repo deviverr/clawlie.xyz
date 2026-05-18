@@ -8,6 +8,7 @@ export interface RemotePlayer {
     x: number;
     y: number;
     skin: string;
+    hp: number;
     lastUpdate: number;
 }
 
@@ -78,10 +79,13 @@ export class MultiplayerManager {
               x: data.x,
               y: data.y,
               skin: data.skin,
+              hp: data.hp ?? 100,
               lastUpdate: Date.now()
           };
           this.remotePlayers.set(peerId, player);
           this.eventManager.emit('PLAYER_UPDATED', player);
+      } else if (data.type === 'attack') {
+          this.eventManager.emit('PLAYER_ATTACKED', data.damage);
       }
   }
 
@@ -90,15 +94,22 @@ export class MultiplayerManager {
       this.handleConnection(conn);
   }
 
-  public broadcastSync(x: number, y: number, skin: string): void {
+  public broadcastSync(x: number, y: number, skin: string, hp: number = 100): void {
       const data = {
           type: 'sync',
           username: this.username,
-          x, y, skin
+          x, y, skin, hp
       };
       this.connections.forEach(conn => {
           if (conn.open) conn.send(data);
       });
+  }
+
+  public sendAttack(targetId: string, damage: number): void {
+      const conn = this.connections.get(targetId);
+      if (conn && conn.open) {
+          conn.send({ type: 'attack', damage });
+      }
   }
 
   public getRemotePlayers(): RemotePlayer[] {
