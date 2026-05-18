@@ -24,7 +24,7 @@ export class WorldManager {
   
   public tileSize: number = 32;
   private locations: Map<string, MapLocation> = new Map();
-  private currentLocationId: string = 'farm';
+  private _currentLocationId: string = 'farm';
 
   private constructor() {
     this.eventManager = EventManager.getInstance();
@@ -211,13 +211,17 @@ export class WorldManager {
       return !obstacles.includes(tile.type);
   }
 
+  public get currentLocationId(): string {
+      return this._currentLocationId;
+  }
+
   public getCurrentLocation(): MapLocation {
-    return this.locations.get(this.currentLocationId)!;
+    return this.locations.get(this._currentLocationId)!;
   }
 
   public switchLocation(locationId: string, targetX: number, targetY: number): void {
     if (this.locations.has(locationId)) {
-      this.currentLocationId = locationId;
+      this._currentLocationId = locationId;
       this.eventManager.emit('LOCATION_CHANGED', { locationId, x: targetX, y: targetY });
     }
   }
@@ -247,12 +251,12 @@ export class WorldManager {
     this.locations.forEach((loc, id) => {
         locs[id] = { width: loc.width, height: loc.height, tiles: loc.tiles };
     });
-    return { currentLocationId: this.currentLocationId, locations: locs };
+    return { currentLocationId: this._currentLocationId, locations: locs };
   }
 
   public deserialize(data: any): void {
     if (!data) return;
-    this.currentLocationId = data.currentLocationId || 'farm';
+    this._currentLocationId = data.currentLocationId || 'farm';
     if (data.locations) {
         Object.keys(data.locations).forEach(id => {
             const loc = this.locations.get(id);
