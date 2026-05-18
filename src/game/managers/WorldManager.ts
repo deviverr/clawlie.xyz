@@ -95,6 +95,7 @@ export class WorldManager {
     const house = this.createEmptyLocation('house', 'Your Home', 20, 15);
     this.fillArea(house, 0, 0, 20, 15, TileType.WOOD);
     this.drawBorder(house, TileType.WALL);
+    house.tiles[10][14].type = TileType.WOOD; // make exit passable
     house.exits.push({ x: 10, y: 14, targetLocationId: 'farm', targetX: 40, targetY: 42 });
     this.locations.set('house', house);
 
@@ -106,6 +107,7 @@ export class WorldManager {
         casino.tiles[6 + i*4][6].type = TileType.CASINO_TABLE;
         casino.tiles[6 + i*4][13].type = TileType.CASINO_TABLE;
     }
+    casino.tiles[12][19].type = TileType.CARPET; // make exit passable
     casino.exits.push({ x: 12, y: 19, targetLocationId: 'town', targetX: 20, targetY: 23 });
     this.locations.set('casino', casino);
 
@@ -113,6 +115,7 @@ export class WorldManager {
     const shopInterior = this.createEmptyLocation('shop_interior', 'General Store', 20, 15);
     this.fillArea(shopInterior, 0, 0, 20, 15, TileType.WOOD);
     this.drawBorder(shopInterior, TileType.WALL);
+    shopInterior.tiles[10][14].type = TileType.WOOD; // make exit passable
     shopInterior.exits.push({ x: 10, y: 14, targetLocationId: 'town', targetX: 60, targetY: 23 });
     this.locations.set('shop_interior', shopInterior);
   }

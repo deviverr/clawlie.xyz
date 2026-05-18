@@ -108,7 +108,7 @@ export class WorldRenderer {
     }
 
     // 3. Draw NPCs
-    this.npcManager.getNPCs().forEach(npc => {
+    this.npcManager.getNPCs().filter(npc => npc.locationId === this.world.currentLocationId).forEach(npc => {
       const npcSprite = this.assetLoader.getImage('player_red'); 
       if (npcSprite) {
         this.drawCharacterSprite(npcSprite, npc.x, npc.y);

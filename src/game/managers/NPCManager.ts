@@ -7,6 +7,7 @@ export interface NPC {
   role: string;
   x: number;
   y: number;
+  locationId: string;
   dialogue: string[];
   portrait: string;
   currentQuest?: string;
@@ -38,6 +39,7 @@ export class NPCManager {
       role: 'Town Mayor',
       x: 400,
       y: 400,
+      locationId: 'town',
       portrait: this.assetLoader.resolveAssetPath('assets/sprites/blue_character/full_sprite_blue.png'),
       dialogue: [
         "Welcome to Clawlie.XYZ!",
@@ -53,6 +55,7 @@ export class NPCManager {
       role: 'Animal Specialist',
       x: 800,
       y: 300,
+      locationId: 'farm',
       portrait: this.assetLoader.resolveAssetPath('assets/sprites/green_character/full_sprite_green.png'),
       dialogue: [
         "I love animals, don't you?",

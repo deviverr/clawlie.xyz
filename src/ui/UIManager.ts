@@ -100,23 +100,18 @@ export class UIManager {
     const menu = document.createElement('div');
     menu.className = 'full-screen-menu fade-in';
     menu.innerHTML = `
-      <div class="menu-content">
-        <h1 style="font-size: 32px; margin-bottom: 30px; color: #3e2723; text-shadow: 4px 4px 0px #fff;">CLAWLIE.XYZ</h1>
-        <div class="flex-col">
-          <button class="pixel-btn" id="start-game-btn">New Game</button>
-          <button class="pixel-btn" id="load-game-btn">Continue</button>
-          <button class="pixel-btn" id="settings-btn">Settings</button>
+      <div class="menu-content" style="text-align: center; padding: 40px; border: 4px solid var(--ui-border); box-shadow: 8px 8px 0px rgba(0,0,0,0.5);">
+        <h1 style="font-size: 48px; margin-bottom: 5px; color: #3e2723; text-shadow: 4px 4px 0px #fff;">CLAWLIE<span style="color: #4CAF50;">.XYZ</span></h1>
+        <p style="font-size: 12px; margin-bottom: 40px; color: #5d4037;">The Ultimate Pixel Farming Adventure</p>
+        <div class="flex-col" style="gap: 15px;">
+          <button class="pixel-btn" id="start-game-btn" style="font-size: 20px; padding: 15px 30px; background-color: #4CAF50; color: white;">Play</button>
+          <button class="pixel-btn" id="settings-btn" style="font-size: 14px;">Settings</button>
         </div>
       </div>
     `;
     this.uiLayer.appendChild(menu);
 
     document.getElementById('start-game-btn')!.onclick = () => this.showCharacterSelection();
-    document.getElementById('load-game-btn')!.onclick = () => {
-        this.saveManager.loadGame().then(() => {
-            this.startGame();
-        });
-    };
     document.getElementById('settings-btn')!.onclick = () => this.showSettings();
   }
 

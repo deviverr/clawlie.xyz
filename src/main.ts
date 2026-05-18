@@ -192,7 +192,7 @@ class Game {
     }
 
     const clickedNPC = this.npcManager.getNPCs().find(n => 
-      Math.abs(n.x - worldPos.x) < 20 && Math.abs(n.y - worldPos.y) < 20
+      n.locationId === this.worldManager.currentLocationId && Math.abs(n.x - worldPos.x) < 20 && Math.abs(n.y - worldPos.y) < 20
     );
     if (clickedNPC) {
       const line = this.npcManager.interact(clickedNPC.id);
