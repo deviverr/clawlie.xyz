@@ -890,7 +890,7 @@ export class UIManager {
     return itemId.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   }
 
-  private showToast(message: string): void {
+  public showToast(message: string): void {
     let toast = document.getElementById('game-toast');
     if (!toast) {
       toast = document.createElement('div');
