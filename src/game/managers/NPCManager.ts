@@ -1,5 +1,7 @@
 import { EventManager } from '../../core/EventManager';
 import { AssetLoader } from '../../utils/AssetLoader';
+import { EntityManager } from '../../core/EntityManager';
+import { NPCEntity } from '../entities/NPCEntity';
 
 export interface NPC {
   id: string;
@@ -11,17 +13,20 @@ export interface NPC {
   dialogue: string[];
   portrait: string;
   currentQuest?: string;
+  entity?: NPCEntity;
 }
 
 export class NPCManager {
   private static instance: NPCManager;
   private eventManager: EventManager;
   private assetLoader: AssetLoader;
+  private entityManager: EntityManager;
   private npcs: NPC[] = [];
 
   private constructor() {
     this.eventManager = EventManager.getInstance();
     this.assetLoader = AssetLoader.getInstance();
+    this.entityManager = EntityManager.getInstance();
     this.spawnDefaultNPCs();
   }
 
@@ -33,7 +38,7 @@ export class NPCManager {
   }
 
   private spawnDefaultNPCs(): void {
-    this.npcs.push({
+    const mayor = {
       id: 'mayor_lewis',
       name: 'Mayor Lewis',
       role: 'Town Mayor',
@@ -47,9 +52,9 @@ export class NPCManager {
         "How is your farm coming along?"
       ],
       currentQuest: 'first_harvest'
-    });
+    };
 
-    this.npcs.push({
+    const marnie = {
       id: 'marnie',
       name: 'Marnie',
       role: 'Animal Specialist',
@@ -62,6 +67,12 @@ export class NPCManager {
         "Make sure to feed your chickens every day!",
         "If you need more hay, come visit me."
       ]
+    };
+
+    [mayor, marnie].forEach(data => {
+        const npc = { ...data, entity: new NPCEntity(data.id, data.x, data.y, data.name, data.portrait) };
+        this.npcs.push(npc);
+        this.entityManager.addEntity(npc.entity);
     });
   }
 
@@ -83,8 +94,20 @@ export class NPCManager {
   }
 
   public update(dt: number): void {
+    const world = (window as any).gameInstance?.worldManager;
+    const currentLocationId = world?.currentLocationId || 'farm';
+
     // Basic NPC wandering (smooth)
     this.npcs.forEach(npc => {
+      // Sync visibility
+      if (npc.entity) {
+          npc.entity.isDestroyed = (npc.locationId !== currentLocationId);
+          // If was hidden but now same location, we'd need to re-add, 
+          // but EntityManager cleanup might have removed it.
+          // Better approach: just don't render it in WorldRenderer or add a 'visible' flag.
+          // For now, let's keep it simple and just sync position.
+      }
+
       // Create a target destination occasionally
       if (!(npc as any).targetX) {
          if (Math.random() < 0.01) {
@@ -101,6 +124,12 @@ export class NPCManager {
              npc.x += (dx / dist) * 20 * dt;
              npc.y += (dy / dist) * 20 * dt;
          }
+      }
+
+      // Sync to entity
+      if (npc.entity) {
+          npc.entity.x = npc.x;
+          npc.entity.y = npc.y;
       }
     });
   }

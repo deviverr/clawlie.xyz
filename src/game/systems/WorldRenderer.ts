@@ -5,6 +5,7 @@ import { AnimalsManager } from '../managers/AnimalsManager';
 import { NPCManager } from '../managers/NPCManager';
 import { TimeManager } from '../managers/TimeManager';
 import { AssetLoader } from '../../utils/AssetLoader';
+import { EntityManager } from '../../core/EntityManager';
 
 export class WorldRenderer {
   private world: WorldManager;
@@ -13,6 +14,7 @@ export class WorldRenderer {
   private npcManager: NPCManager;
   private timeManager: TimeManager;
   private assetLoader: AssetLoader;
+  private entityManager: EntityManager;
   private readonly characterSize = 64;
 
   // Cache colors
@@ -40,6 +42,7 @@ export class WorldRenderer {
     this.npcManager = NPCManager.getInstance();
     this.timeManager = TimeManager.getInstance();
     this.assetLoader = AssetLoader.getInstance();
+    this.entityManager = EntityManager.getInstance();
   }
 
   public render(game: any): void {
@@ -93,11 +96,19 @@ export class WorldRenderer {
       }
     }
 
-    // 2. Draw Remote Players
+    // 2. Draw Entities (Unified System)
+    const currentLocationId = this.world.currentLocationId;
+    this.entityManager.getEntities().forEach(entity => {
+      // Basic visibility check for NPCs/Animals based on location if needed
+      // (Currently NPCs/Animals are mostly on farm, but we should eventually add locationId to BaseEntity)
+      entity.render(ctx);
+    });
+
+    // 3. Draw Remote Players
     const mpManager = (window as any).gameInstance._multiplayerManager;
     if (mpManager) {
         mpManager.getRemotePlayers().forEach((p: any) => {
-            if (p.locationId !== this.world.currentLocationId) return;
+            if (p.locationId !== currentLocationId) return;
             
             const sprite = this.assetLoader.getImage(p.skin);
             if (sprite) {
@@ -118,64 +129,7 @@ export class WorldRenderer {
         });
     }
 
-    // 3. Draw NPCs
-    this.npcManager.getNPCs().filter(npc => npc.locationId === this.world.currentLocationId).forEach(npc => {
-      const npcSprite = this.assetLoader.getImage('player_red'); 
-      if (npcSprite) {
-        this.drawCharacterSprite(npcSprite, npc.x, npc.y);
-      }
-      ctx.fillStyle = '#ffca28';
-      ctx.font = '8px "Press Start 2P"';
-      ctx.textAlign = 'center';
-      ctx.fillText(npc.name, npc.x, npc.y - 20);
-    });
-
-    // 4. Draw Player
-    const playerSprite = this.assetLoader.getImage(game.playerSkin);
-    if (playerSprite) {
-       this.drawCharacterSprite(playerSprite, game.playerX, game.playerY);
-    }
-    ctx.fillStyle = '#4CAF50';
-    ctx.font = '8px "Press Start 2P"';
-    ctx.textAlign = 'center';
-    ctx.fillText(game.username || 'YOU', game.playerX, game.playerY - 20);
-
-    // Health bar local
-    ctx.fillStyle = 'red';
-    ctx.fillRect(game.playerX - 10, game.playerY - 30, 20, 4);
-    ctx.fillStyle = 'green';
-    ctx.fillRect(game.playerX - 10, game.playerY - 30, 20 * (game.hp / 100), 4);
-
-    // 4. Draw Animals
-    this.animalsManager.getAnimals().forEach(animal => {
-      let color = '#FFFFFF';
-      let accent = '#fbc02d';
-      if (animal.type === 'cow') {
-        color = '#A1887F';
-        accent = '#3e2723';
-      }
-      if (animal.type === 'sheep') {
-        color = '#E0E0E0';
-        accent = '#9E9E9E';
-      }
-
-      ctx.fillStyle = color;
-      ctx.fillRect(animal.x - 18, animal.y - 14, 28, 20);
-      ctx.fillRect(animal.x + 6, animal.y - 20, 16, 16);
-      ctx.fillStyle = accent;
-      ctx.fillRect(animal.x + 14, animal.y - 15, 3, 3);
-      ctx.fillRect(animal.x - 14, animal.y + 6, 5, 8);
-      ctx.fillRect(animal.x + 4, animal.y + 6, 5, 8);
-      
-      if (animal.isProductive) {
-        ctx.fillStyle = 'gold';
-        ctx.beginPath();
-        ctx.arc(animal.x, animal.y - 15, 4, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    });
-
-    // 5. Day/Night Overlay
+    // 4. Day/Night Overlay
     this.drawDayNightOverlay(ctx);
   }
 

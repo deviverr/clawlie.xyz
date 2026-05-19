@@ -83,21 +83,22 @@ Based on the file structure and content analysis, here's a breakdown of the proj
 
 This plan focuses on establishing core game mechanics and structure before expanding into more advanced features.
 
-**Phase 1: Establish Core Game Objects and Player Interaction (High Priority)**
+**Phase 1: Establish Core Game Objects and Player Interaction (COMPLETED)**
 
-1.  **Implement an Entity-Component-System (ECS) or Similar Object Model:**
-    *   **Tasks:** Define base `Entity` and `Component` structures. Create essential components (e.g., `PositionComponent`, `RenderComponent`, `ColliderComponent`, `InputComponent`, `HealthComponent`). Implement core entities (`PlayerEntity`, `BaseNpcEntity`, `BaseCropEntity`, `BaseItemEntity`). Integrate an `EntityManager` (could be within `WorldManager` or separate) to manage entity lifecycle.
-    *   **Rationale:** This is fundamental to a scalable, maintainable, and extensible game architecture, directly addressing the empty `components` and `entities` directories.
+1.  **Implement an Entity-Component-System (ECS) or Similar Object Model: (DONE)**
+    *   **Tasks:** Defined base `Entity` structure. Created `EntityManager` to manage entity lifecycle. Implemented `PlayerEntity`, `NPCEntity`, and `AnimalEntity`.
+    *   **Rationale:** Foundation for scalable game architecture.
 
-2.  **Integrate Player Character:**
-    *   **Tasks:** Create `PlayerComponent` and `PlayerEntity`. Connect `InputManager` events to update the `PlayerEntity`'s state (e.g., movement via `PositionComponent`). Ensure `WorldRenderer` can render the `PlayerEntity` using its `RenderComponent` and sprite assets.
-    *   **Rationale:** Establish the player as a functional and interactable element in the game world.
+2.  **Integrate Player Character: (DONE)**
+    *   **Tasks:** Migrated player state to `PlayerEntity`. Unified rendering via `EntityManager`.
+    *   **Rationale:** Establishes the player as a first-class entity.
 
-3.  **Implement Core Crop Functionality:**
-    *   **Tasks:** Create `CropComponent` (defining growth stages, type, yield) and `CropEntity`. Integrate `CropEntity` creation/management with `FarmManager` and growth logic with `GrowthSystem`. Ensure `WorldRenderer` can accurately display `CropEntity` states (e.g., different growth sprites).
-    *   **Rationale:** Implement the core gameplay loop for a farming simulation.
+3.  **Implement Core Crop Functionality: (IN PROGRESS)**
+    *   **Tasks:** Next step: convert Crops into Entities to support animations and particles.
 
-**Phase 2: Expand Game World and Basic Interactions (Medium-High Priority)**
+**Phase 2: Expand Game World and Basic Interactions (Current Focus)**
+*   **Added In-Game Update Log (v1.2.0)** to keep players informed of rapid development.
+*   **Unified Entity Lifecycle** across Players, NPCs, and Animals.
 
 1.  **Populate World with Initial Entities:**
     *   **Tasks:** Develop mechanisms within `WorldManager` to create and place various entities (player, initial crops, environmental objects) into the game world at startup or dynamically. This might involve loading scene data.

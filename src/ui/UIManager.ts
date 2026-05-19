@@ -261,6 +261,7 @@ export class UIManager {
     sideMenu.appendChild(this.createMenuButton('📜 Quests', () => this.togglePanel('quest')));
     sideMenu.appendChild(this.createMenuButton('⚒️ Craft', () => this.togglePanel('craft')));
     sideMenu.appendChild(this.createMenuButton('💰 Shop', () => this.togglePanel('shop')));
+    sideMenu.appendChild(this.createMenuButton('📰 Updates', () => this.togglePanel('updates')));
     
     // Teleport Buttons
     sideMenu.appendChild(this.createMenuButton('🏠 Home', () => this.teleportTo('house')));
@@ -574,7 +575,7 @@ export class UIManager {
     return btn;
   }
 
-  private togglePanel(type: 'quest' | 'craft' | 'shop' | 'casino'): void {
+  private togglePanel(type: 'quest' | 'craft' | 'shop' | 'casino' | 'updates'): void {
     if (this.activePanel) {
       const currentType = this.activePanel.getAttribute('data-type');
       this.activePanel.remove();
@@ -592,7 +593,7 @@ export class UIManager {
      }
   }
 
-  private showPanel(type: 'quest' | 'craft' | 'shop' | 'casino'): void {
+  private showPanel(type: 'quest' | 'craft' | 'shop' | 'casino' | 'updates'): void {
     const panel = document.createElement('div');
     panel.className = 'ui-panel overlay-panel fade-in';
     panel.setAttribute('data-type', type);
@@ -606,7 +607,41 @@ export class UIManager {
     panel.querySelector('button')!.onclick = () => { panel.remove(); this.activePanel = null; };
     const content = panel.querySelector('#panel-content')!;
     
-    if (type === 'quest') {
+    if (type === 'updates') {
+        const UPDATES = [
+          { version: '1.2.0', date: '2026-05-19', changes: [
+            'Implemented Unified Entity System for smoother performance',
+            'Local player now part of the global Entity Lifecycle',
+            'Added In-Game Update Log',
+            'Improved World Renderer performance with Entity Culling prep'
+          ]},
+          { version: '1.1.5', date: '2026-05-18', changes: [
+            'Massive hotfixes for multiplayer overflow',
+            'Improved world gen dimensions',
+            'Added BGM synthesizer'
+          ]},
+          { version: '1.1.0', date: '2026-05-17', changes: [
+            'Added Nicknames',
+            'Monetization Integration with AdSense Reward Button',
+            'Added PvP hit detection and health bars'
+          ]}
+        ];
+
+        UPDATES.forEach(u => {
+            const item = document.createElement('div');
+            item.className = 'quest-item';
+            item.innerHTML = `
+                <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #5d4037; margin-bottom: 5px;">
+                    <strong>v${u.version}</strong>
+                    <small>${u.date}</small>
+                </div>
+                <ul style="margin: 5px 0; padding-left: 15px; font-size: 8px;">
+                    ${u.changes.map(c => `<li>${c}</li>`).join('')}
+                </ul>
+            `;
+            content.appendChild(item);
+        });
+    } else if (type === 'quest') {
       this.questManager.getActiveQuests().forEach(q => {
         const item = document.createElement('div');
         item.className = `quest-item ${q.isCompleted ? 'completed' : ''}`;

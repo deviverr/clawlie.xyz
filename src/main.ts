@@ -2,6 +2,8 @@ import { GameLoop } from './core/GameLoop';
 import { InputManager } from './core/InputManager';
 import { CanvasRenderer } from './renderer/CanvasRenderer';
 import { EventManager } from './core/EventManager';
+import { EntityManager } from './core/EntityManager';
+import { PlayerEntity } from './game/entities/PlayerEntity';
 import { WorldManager } from './game/managers/WorldManager';
 import { WorldRenderer } from './game/systems/WorldRenderer';
 import { TimeManager } from './game/managers/TimeManager';
@@ -31,6 +33,7 @@ class Game {
   private input: InputManager;
   private eventManager: EventManager;
   private assetLoader: AssetLoader;
+  private entityManager: EntityManager;
   
   private worldManager: WorldManager;
   private worldRenderer: WorldRenderer;
@@ -52,7 +55,8 @@ class Game {
   private _multiplayerManager: MultiplayerManager;
   private fishingManager: FishingManager;
 
-  // Temporary State
+  // Player State
+  public player: PlayerEntity;
   public playerX: number;
   public playerY: number;
   public playerSkin: string = 'player_blue';
@@ -66,6 +70,7 @@ class Game {
     this.input.setCanvas(this.renderer.getCanvas());
     this.eventManager = EventManager.getInstance();
     this.assetLoader = AssetLoader.getInstance();
+    this.entityManager = EntityManager.getInstance();
     
     this.worldManager = WorldManager.getInstance();
     
@@ -95,6 +100,10 @@ class Game {
     // Start player in a safe spot
     this.playerX = 50 * this.worldManager.tileSize;
     this.playerY = 55 * this.worldManager.tileSize;
+
+    // Initialize Player Entity
+    this.player = new PlayerEntity('local_player', this.playerX, this.playerY, this.username, this.playerSkin);
+    this.entityManager.addEntity(this.player);
 
     // Handle Input Events for Interaction
     this.eventManager.on('INPUT_MOUSE_DOWN', (e: any) => this.handleInteraction(e));
@@ -327,6 +336,14 @@ class Game {
 
     this.renderer.camera.setPosition(this.playerX, this.playerY);
     this.renderer.camera.update(dt, this.worldManager.width, this.worldManager.height, this.worldManager.tileSize);
+
+    // Sync to Entity System
+    this.player.x = this.playerX;
+    this.player.y = this.playerY;
+    this.player.hp = this.hp;
+    this.player.username = this.username;
+    this.player.skin = this.playerSkin;
+    this.entityManager.update(dt);
 
     // Broadcast position to other players
     if (this._multiplayerManager) {

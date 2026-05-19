@@ -1,5 +1,7 @@
 import { EventManager } from '../../core/EventManager';
 import { TimeManager } from './TimeManager';
+import { EntityManager } from '../../core/EntityManager';
+import { AnimalEntity } from '../entities/AnimalEntity';
 
 export enum AnimalType {
   CHICKEN = 'chicken',
@@ -17,18 +19,21 @@ export interface Animal {
   age: number; // days
   isProductive: boolean;
   lastProducedDay: number;
+  entity?: AnimalEntity;
 }
 
 export class AnimalsManager {
   private static instance: AnimalsManager;
   private eventManager: EventManager;
   private timeManager: TimeManager;
+  private entityManager: EntityManager;
 
   private animals: Animal[] = [];
 
   private constructor() {
     this.eventManager = EventManager.getInstance();
     this.timeManager = TimeManager.getInstance();
+    this.entityManager = EntityManager.getInstance();
 
     this.eventManager.on('DAY_START', () => this.processDailyUpdate());
   }
@@ -50,9 +55,11 @@ export class AnimalsManager {
       happiness: 100,
       age: 0,
       isProductive: false,
-      lastProducedDay: -1
+      lastProducedDay: -1,
+      entity: new AnimalEntity(`ent_${Date.now()}`, x, y, type)
     };
     this.animals.push(animal);
+    this.entityManager.addEntity(animal.entity!);
     this.eventManager.emit('ANIMAL_ADDED', animal);
   }
 
@@ -121,6 +128,13 @@ export class AnimalsManager {
       if (Math.random() < 0.01) {
         animal.x += (Math.random() - 0.5) * 20;
         animal.y += (Math.random() - 0.5) * 20;
+      }
+
+      // Sync to entity
+      if (animal.entity) {
+          animal.entity.x = animal.x;
+          animal.entity.y = animal.y;
+          animal.entity.isProductive = animal.isProductive;
       }
     });
   }
