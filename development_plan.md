@@ -99,24 +99,27 @@ This plan focuses on establishing core game mechanics and structure before expan
 **Phase 2: Expand Game World and Basic Interactions (Current Focus)**
 *   **Added In-Game Update Log (v1.2.0)** to keep players informed of rapid development.
 *   **Unified Entity Lifecycle** across Players, NPCs, and Animals.
+*   **Added Grand Update v1.2.0:** Seeded World Gen, Multiplayer Chat, Fishing, and UI menus.
 
-1.  **Populate World with Initial Entities:**
-    *   **Tasks:** Develop mechanisms within `WorldManager` to create and place various entities (player, initial crops, environmental objects) into the game world at startup or dynamically. This might involve loading scene data.
-    *   **Rationale:** Begin building the actual interactive game environment.
+**Phase 3: The "Combat & Caves" Update (v1.3.0) - PLAN**
 
-2.  **Basic NPC Implementation:**
-    *   **Tasks:** Define `NPCEntity` and relevant `Component`s (e.g., `AIComponent` for simple movement/interaction, `DialogueComponent` for basic conversation). Integrate with `NPCManager` to manage NPC states and simple behaviors.
-    *   **Rationale:** Introduce basic interactive characters to the game world.
+1.  **Mining System & Caves:**
+    *   **Tasks:** Create a new 'Mines' location. Implement procedural floor generation where each floor is generated from a seed derived from the base world seed + floor number. Add breakable rocks that drop Ores (Copper, Iron, Gold).
+    *   **Rationale:** Provides a primary progression loop outside of farming.
 
-3.  **Inventory and Basic Item System:**
-    *   **Tasks:** Define `ItemComponent` (e.g., type, stack size, properties) and `ItemEntity). Integrate with `InventoryManager` for item collection, storage, and usage by the player.
-    *   **Rationale:** Enable resource gathering, crafting prerequisites, and basic player progression.
+2.  **Combat & Monsters:**
+    *   **Tasks:** Implement a `CombatSystem`. Add `MonsterEntity` types (Slimes, Bats). Slimes will hop toward the player, Bats will fly. Implement sword swinging logic with hitboxes and knockback.
+    *   **Rationale:** Adds risk and excitement to the mining experience.
 
-4.  **Refine UI Integration:**
-    *   **Tasks:** Ensure `UIManager` can effectively display information from newly implemented entities and managers (e.g., player inventory, crop status, basic NPC dialogue). Develop UI elements for interacting with these new systems.
-    *   **Rationale:** Provide necessary feedback and control to the player for the new game systems.
+3.  **Better Multiplayer Sync:**
+    *   **Tasks:** Synchronize monster positions and health across peers. Implement a "Host" role for monster AI to prevent desync.
+    *   **Rationale:** Ensures a smooth co-op experience in the mines.
 
-**Phase 3: Advanced Features, Quality, and Polish (Medium Priority)**
+4.  **Social Trading:**
+    *   **Tasks:** Add a "Trade" option to the player list. Create a UI for two-way item/money trading between connected players.
+    *   **Rationale:** Enhances the "multiplayer" feel beyond just seeing each other.
+
+**Phase 4: Quality, Polish, and Expansion (Medium Priority)**
 
 1.  **Comprehensive Testing Integration:**
     *   **Tasks:** Introduce a suitable testing framework (e.g., Jest, Mocha) and begin writing unit and integration tests for core components, managers, and systems, particularly focusing on the newly implemented ECS and entity logic.

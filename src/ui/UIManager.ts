@@ -113,7 +113,8 @@ export class UIManager {
     menu.innerHTML = `
       <div class="menu-content" style="text-align: center; padding: 40px; border: 4px solid var(--ui-border); box-shadow: 8px 8px 0px rgba(0,0,0,0.5);">
         <h1 style="font-size: 48px; margin-bottom: 5px; color: #3e2723; text-shadow: 4px 4px 0px #fff;">CLAWLIE<span style="color: #4CAF50;">.XYZ</span></h1>
-        <p style="font-size: 12px; margin-bottom: 40px; color: #5d4037;">The Ultimate Pixel Farming Adventure</p>
+        <p style="font-size: 12px; margin-bottom: 5px; color: #5d4037;">The Ultimate Pixel Farming Adventure</p>
+        <p style="font-size: 8px; margin-bottom: 30px; color: #4CAF50; letter-spacing: 1px;">GRAND UPDATE v1.2.0</p>
         <div class="flex-col" style="gap: 15px;">
           <button class="pixel-btn" id="start-game-btn" style="font-size: 20px; padding: 15px 30px; background-color: #4CAF50; color: white;">Play</button>
           <button class="pixel-btn" id="settings-btn" style="font-size: 14px;">Settings</button>
