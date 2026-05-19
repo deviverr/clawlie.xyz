@@ -80,8 +80,19 @@ export class UIManager {
     });
     this.eventManager.on('INTERACT_CASINO', () => this.togglePanel('casino'));
     this.eventManager.on('LOCATION_CHANGED', () => this.renderMinimap());
+    this.eventManager.on('CHAT_MESSAGE', (msg: any) => this.addChatMessage(msg));
 
     this.showMainMenu();
+  }
+
+  private addChatMessage(msg: { username: string, text: string, id: string }): void {
+      const container = document.getElementById('chat-content');
+      if (!container) return;
+      const item = document.createElement('div');
+      item.style.marginBottom = '4px';
+      item.innerHTML = `<span style="color: ${msg.id === 'me' ? '#4CAF50' : '#2196F3'};">${msg.username}:</span> ${msg.text}`;
+      container.appendChild(item);
+      container.scrollTop = container.scrollHeight;
   }
 
   public static getInstance(): UIManager {
@@ -204,6 +215,7 @@ export class UIManager {
     this.setupSideMenu();
     this.setupMinimap();
     this.setupPlayerList();
+    this.setupChat();
     this.setupAds();
     this.setupTouchControls();
     this.updateToolbar();
@@ -319,6 +331,10 @@ export class UIManager {
       this.eventManager.on('MP_READY', (id: string) => {
           myIdSpan.textContent = id;
       });
+      
+      this.eventManager.on('MP_ERROR', (msg: string) => {
+          this.showToast(msg);
+      });
 
       const input = container.querySelector('#target-peer-id') as HTMLInputElement;
       const btn = container.querySelector('#connect-peer-btn') as HTMLButtonElement;
@@ -343,6 +359,34 @@ export class UIManager {
           item.className = 'player-list-item';
           item.innerHTML = `<div class="online-dot"></div> ${p.username} (${p.id.slice(0, 4)})`;
           content.appendChild(item);
+      });
+  }
+
+  private setupChat(): void {
+      const container = document.createElement('div');
+      container.id = 'chat-container';
+      container.innerHTML = `
+        <div id="chat-content"></div>
+        <input type="text" id="chat-input" placeholder="Press Enter to chat..." maxlength="100">
+      `;
+      this.uiLayer.appendChild(container);
+
+      const input = container.querySelector('#chat-input') as HTMLInputElement;
+      input.onkeydown = (e) => {
+          if (e.key === 'Enter' && input.value.trim()) {
+              this.multiplayerManager.sendChat(input.value.trim());
+              input.value = '';
+              input.blur();
+          }
+          e.stopPropagation();
+      };
+
+      // Handle 'Enter' to focus chat
+      window.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' && document.activeElement !== input) {
+              input.focus();
+              e.preventDefault();
+          }
       });
   }
 
@@ -744,6 +788,7 @@ export class UIManager {
     this.createToolSlot(toolbar, 'hoe', '⛏️');
     this.createToolSlot(toolbar, 'water', '💧');
     this.createToolSlot(toolbar, 'scythe', '⚔️'); 
+    this.createToolSlot(toolbar, 'fishing_rod', '🎣'); 
 
     this.inventoryManager.getItems().forEach((count, id) => {
        if (id.includes('seed')) this.createToolSlot(toolbar, id, '🌱', count);

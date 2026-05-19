@@ -22,6 +22,7 @@ import { QuestManager } from './game/managers/QuestManager';
 import { MonetizationManager } from './game/managers/MonetizationManager';
 import { AudioManager } from './core/AudioManager';
 import { MultiplayerManager } from './game/managers/MultiplayerManager';
+import { FishingManager } from './game/managers/FishingManager';
 import { AssetLoader } from './utils/AssetLoader';
 
 class Game {
@@ -49,6 +50,7 @@ class Game {
   private _monetizationManager: MonetizationManager;
   private _audioManager: AudioManager;
   private _multiplayerManager: MultiplayerManager;
+  private fishingManager: FishingManager;
 
   // Temporary State
   public playerX: number;
@@ -83,6 +85,7 @@ class Game {
     this._monetizationManager = MonetizationManager.getInstance();
     this._audioManager = AudioManager.getInstance();
     this._multiplayerManager = MultiplayerManager.getInstance();
+    this.fishingManager = FishingManager.getInstance();
 
     this.worldRenderer = new WorldRenderer(this.renderer);
     
@@ -98,6 +101,13 @@ class Game {
     
         // Handle 'E' key for NPC interaction
         this.eventManager.on('INPUT_KEY_E_PRESSED', () => this.handleNPCInteraction());
+
+        this.eventManager.on('FISHING_BITE', () => this.uiManager.showToast("BITE! Press USE to reel!"));
+        this.eventManager.on('FISHING_CAUGHT', (fish: string) => {
+            this.inventoryManager.addItem(fish, 1);
+            this.uiManager.showToast(`Caught a ${fish}!`);
+        });
+        this.eventManager.on('FISHING_LOST', () => this.uiManager.showToast("The fish got away..."));
 
         // Handle incoming attacks
         this.eventManager.on('PLAYER_ATTACKED', (damage: number) => {
@@ -241,17 +251,22 @@ class Game {
 
       if (selectedItem === 'hoe') {
         if (tile.type === TileType.GRASS) {
-          this.farmManager.till(tile);
-          this.renderer.camera.shake(3, 0.2);
+          if (this.farmManager.till(tile)) {
+              this._multiplayerManager.broadcastWorldAction({ type: 'till', x: tileX, y: tileY });
+              this.renderer.camera.shake(3, 0.2);
+          }
         }
       } else if (selectedItem === 'water') {
         if (tile.type === TileType.SOIL) {
-          this.farmManager.water(tile);
+          if (this.farmManager.water(tile)) {
+              this._multiplayerManager.broadcastWorldAction({ type: 'water', x: tileX, y: tileY });
+          }
         }
       } else if (selectedItem === 'scythe') {
         if (tile.cropId) {
           const harvested = this.farmManager.harvest(tile);
           if (harvested) {
+             this._multiplayerManager.broadcastWorldAction({ type: 'harvest', x: tileX, y: tileY });
              const config = CROPS[harvested];
              this.inventoryManager.addItem(harvested, config.harvestYield);
              this.eventManager.emit('CROP_HARVESTED', harvested);
@@ -259,10 +274,20 @@ class Game {
              console.log(`Harvested ${harvested}`);
           }
         }
+      } else if (selectedItem === 'fishing_rod') {
+          if (this.fishingManager.fishingState.isFishing) {
+              const fish = this.fishingManager.reel();
+              if (fish) this.renderer.camera.shake(5, 0.3);
+          } else {
+              if (this.fishingManager.cast(tileX, tileY)) {
+                  console.log("Casting rod...");
+              }
+          }
       } else if (selectedItem.endsWith('_seed')) {
          const cropId = selectedItem.replace('_seed', '');
          if (this.inventoryManager.hasItem(selectedItem)) {
             if (this.farmManager.plant(tile, cropId)) {
+               this._multiplayerManager.broadcastWorldAction({ type: 'plant', x: tileX, y: tileY, cropId });
                this.inventoryManager.removeItem(selectedItem);
                this.eventManager.emit('CROP_PLANTED', cropId);
             }
@@ -305,7 +330,7 @@ class Game {
 
     // Broadcast position to other players
     if (this._multiplayerManager) {
-        this._multiplayerManager.broadcastSync(this.playerX, this.playerY, this.playerSkin, this.hp);
+        this._multiplayerManager.broadcastSync(this.playerX, this.playerY, this.playerSkin, this.hp, this.worldManager.currentLocationId);
     }
 
     // Check for map exits

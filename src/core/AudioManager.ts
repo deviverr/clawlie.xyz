@@ -34,6 +34,9 @@ export class AudioManager {
      events.on('CROP_PLANTED', () => this.playSound('plant'));
      events.on('CROP_HARVESTED', () => this.playSound('harvest'));
      events.on('MONEY_CHANGED', (amount: number) => { if (amount > 0) this.playSound('coins'); });
+     events.on('FISHING_CAST', () => this.playSound('splash'));
+     events.on('FISHING_BITE', () => this.playSound('bite'));
+     events.on('FISHING_CAUGHT', () => this.playSound('success'));
   }
 
   private currentBgmOsc: OscillatorNode | null = null;
@@ -54,21 +57,26 @@ export class AudioManager {
       osc.connect(gain);
       gain.connect(this.bgmGain);
       
-      this.bgmGain.gain.value = 0.05; // Keep it quiet
+      this.bgmGain.gain.value = 0.05; 
       osc.start();
 
       let noteIndex = 0;
-      // Simple pentatonic scale melody
-      const notes = [261.63, 293.66, 329.63, 392.00, 440.00, 392.00, 329.63, 293.66];
+      // Improved melody: C Major with variations
+      const melody = [
+          { freq: 261.63, dur: 500 }, { freq: 329.63, dur: 500 }, { freq: 392.00, dur: 500 }, { freq: 523.25, dur: 500 },
+          { freq: 440.00, dur: 500 }, { freq: 349.23, dur: 500 }, { freq: 392.00, dur: 1000 },
+          { freq: 261.63, dur: 500 }, { freq: 329.63, dur: 500 }, { freq: 392.00, dur: 500 }, { freq: 440.00, dur: 500 },
+          { freq: 392.00, dur: 500 }, { freq: 293.66, dur: 500 }, { freq: 261.63, dur: 1000 }
+      ];
       
-      const interval = setInterval(() => {
-          if (!this.currentBgmOsc) {
-              clearInterval(interval);
-              return;
-          }
-          osc.frequency.setValueAtTime(notes[noteIndex], this.audioContext.currentTime);
-          noteIndex = (noteIndex + 1) % notes.length;
-      }, 500);
+      const playNextNote = () => {
+          if (!this.currentBgmOsc) return;
+          const note = melody[noteIndex];
+          osc.frequency.setTargetAtTime(note.freq, this.audioContext.currentTime, 0.1);
+          noteIndex = (noteIndex + 1) % melody.length;
+          setTimeout(playNextNote, note.dur);
+      };
+      playNextNote();
 
       this.currentBgmOsc = osc;
       this.currentBgmGain = gain;
@@ -123,6 +131,30 @@ export class AudioManager {
        gain.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.2);
        osc.start();
        osc.stop(this.audioContext.currentTime + 0.2);
+    } else if (type === 'splash') {
+       osc.type = 'noise' as any; // Noise approximation
+       osc.frequency.setValueAtTime(100, this.audioContext.currentTime);
+       gain.gain.setValueAtTime(0.1, this.audioContext.currentTime);
+       gain.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.3);
+       osc.start();
+       osc.stop(this.audioContext.currentTime + 0.3);
+    } else if (type === 'bite') {
+       osc.type = 'sine';
+       osc.frequency.setValueAtTime(800, this.audioContext.currentTime);
+       osc.frequency.exponentialRampToValueAtTime(1200, this.audioContext.currentTime + 0.05);
+       gain.gain.setValueAtTime(0.2, this.audioContext.currentTime);
+       gain.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.1);
+       osc.start();
+       osc.stop(this.audioContext.currentTime + 0.1);
+    } else if (type === 'success') {
+       osc.type = 'sine';
+       osc.frequency.setValueAtTime(523.25, this.audioContext.currentTime);
+       osc.frequency.setValueAtTime(659.25, this.audioContext.currentTime + 0.1);
+       osc.frequency.setValueAtTime(783.99, this.audioContext.currentTime + 0.2);
+       gain.gain.setValueAtTime(0.1, this.audioContext.currentTime);
+       gain.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.4);
+       osc.start();
+       osc.stop(this.audioContext.currentTime + 0.4);
     }
   }
 

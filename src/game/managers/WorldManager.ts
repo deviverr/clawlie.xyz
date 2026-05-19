@@ -1,5 +1,6 @@
 import { Tile, TileType } from '../../types';
 import { EventManager } from '../../core/EventManager';
+import { Random } from '../../utils/Random';
 
 export interface MapLocation {
   id: string;
@@ -21,14 +22,29 @@ export interface MapExit {
 export class WorldManager {
   private static instance: WorldManager;
   private eventManager: EventManager;
+  private random: Random;
   
   public tileSize: number = 32;
   private locations: Map<string, MapLocation> = new Map();
   private _currentLocationId: string = 'farm';
+  private _worldSeed: number = 0;
 
   private constructor() {
     this.eventManager = EventManager.getInstance();
+    this._worldSeed = Math.floor(Math.random() * 1000000);
+    this.random = new Random(this._worldSeed);
     this.initializeLocations();
+  }
+
+  public setSeed(seed: number): void {
+      this._worldSeed = seed;
+      this.random = new Random(seed);
+      this.locations.clear();
+      this.initializeLocations();
+  }
+
+  public get worldSeed(): number {
+      return this._worldSeed;
   }
 
   public static getInstance(): WorldManager {
@@ -133,7 +149,8 @@ export class WorldManager {
   private generateComplexTerrain(loc: MapLocation, config: any): void {
       for (let x = 0; x < loc.width; x++) {
           for (let y = 0; y < loc.height; y++) {
-              const r = Math.random();
+              const r = this.random.next();
+              // Determine Biome base
               if (r < config.water) loc.tiles[x][y].type = TileType.WATER;
               else if (r < config.water + config.forest) loc.tiles[x][y].type = TileType.FOREST;
               else if (r < config.water + config.forest + config.stone) loc.tiles[x][y].type = TileType.STONE;
@@ -141,34 +158,61 @@ export class WorldManager {
               else loc.tiles[x][y].type = config.base;
           }
       }
+
+      // Add "Oasis" or "Hot spots" based on seed
+      const hotSpotCount = this.random.nextInt(3, 8);
+      for (let i = 0; i < hotSpotCount; i++) {
+          const hx = this.random.nextInt(10, loc.width - 10);
+          const hy = this.random.nextInt(10, loc.height - 10);
+          const radius = this.random.nextInt(5, 12);
+          for (let x = hx - radius; x < hx + radius; x++) {
+              for (let y = hy - radius; y < hy + radius; y++) {
+                  if (this.isWithin(loc, x, y) && Math.hypot(x - hx, y - hy) < radius) {
+                      if (this.random.next() > 0.3) loc.tiles[x][y].type = TileType.SAND;
+                  }
+              }
+          }
+      }
+
       // Deepen smoothing (Cellular Automata)
       for(let i=0; i<6; i++) this.smoothTerrain(loc);
       
       // Carve random paths through the world
       for(let p=0; p<15; p++) {
-          let cx = Math.floor(Math.random() * loc.width);
-          let cy = Math.floor(Math.random() * loc.height);
+          let cx = this.random.nextInt(0, loc.width);
+          let cy = this.random.nextInt(0, loc.height);
           for(let steps=0; steps<50; steps++) {
                if(this.isWithin(loc, cx, cy)) {
                    loc.tiles[cx][cy].type = TileType.PATH;
                    // widen the path randomly
-                   if (Math.random() > 0.5 && this.isWithin(loc, cx+1, cy)) loc.tiles[cx+1][cy].type = TileType.PATH;
-                   if (Math.random() > 0.5 && this.isWithin(loc, cx, cy+1)) loc.tiles[cx][cy+1].type = TileType.PATH;
+                   if (this.random.next() > 0.5 && this.isWithin(loc, cx+1, cy)) loc.tiles[cx+1][cy].type = TileType.PATH;
+                   if (this.random.next() > 0.5 && this.isWithin(loc, cx, cy+1)) loc.tiles[cx][cy+1].type = TileType.PATH;
                }
-               cx += Math.random() > 0.5 ? 1 : -1;
-               cy += Math.random() > 0.5 ? 1 : -1;
+               cx += this.random.next() > 0.5 ? 1 : -1;
+               cy += this.random.next() > 0.5 ? 1 : -1;
           }
       }
 
-      // Post-process: Add some trees in forests
+      // Post-process: Add some trees in forests and desert decorations
       for (let x = 0; x < loc.width; x++) {
           for (let y = 0; y < loc.height; y++) {
-              if (loc.tiles[x][y].type === TileType.FOREST && Math.random() > 0.6) {
-                  loc.tiles[x][y].type = TileType.TREE;
+              const tile = loc.tiles[x][y];
+              if (tile.type === TileType.FOREST && this.random.next() > 0.55) {
+                  tile.type = TileType.TREE;
               }
-              // Add rocks in stone biomes
-              if (loc.tiles[x][y].type === TileType.STONE && Math.random() > 0.8) {
-                  // Re-using rock or stone wall concept where appropriate. For now we just cluster STONE.
+              if (tile.type === TileType.SAND && this.random.next() > 0.95) {
+                  // Cactus placeholder - reuse stone or specific type if we add it. 
+                  // For now let's just make sure it stays sand.
+              }
+              // Deep water in center of lakes
+              if (tile.type === TileType.WATER) {
+                  let waterNeighbors = 0;
+                  for(let dx=-1; dx<=1; dx++) {
+                      for(let dy=-1; dy<=1; dy++) {
+                          if (this.isWithin(loc, x+dx, y+dy) && loc.tiles[x+dx][y+dy].type === TileType.WATER) waterNeighbors++;
+                      }
+                  }
+                  if (waterNeighbors === 9) tile.type = TileType.DEEP_WATER;
               }
           }
       }

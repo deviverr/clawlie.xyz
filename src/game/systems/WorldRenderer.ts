@@ -97,6 +97,8 @@ export class WorldRenderer {
     const mpManager = (window as any).gameInstance._multiplayerManager;
     if (mpManager) {
         mpManager.getRemotePlayers().forEach((p: any) => {
+            if (p.locationId !== this.world.currentLocationId) return;
+            
             const sprite = this.assetLoader.getImage(p.skin);
             if (sprite) {
                 this.drawCharacterSprite(sprite, p.x, p.y);

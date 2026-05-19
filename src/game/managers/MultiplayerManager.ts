@@ -9,6 +9,7 @@ export interface RemotePlayer {
     y: number;
     skin: string;
     hp: number;
+    locationId: string;
     lastUpdate: number;
 }
 
@@ -50,7 +51,20 @@ export class MultiplayerManager {
       });
 
       this.peer.on('connection', (conn: any) => {
+          console.log(`Incoming connection from: ${conn.peer}`);
           this.handleConnection(conn);
+      });
+
+      this.peer.on('error', (err: any) => {
+          console.error('PeerJS Global Error:', err);
+          if (err.type === 'peer-unavailable') {
+              this.eventManager.emit('MP_ERROR', 'Target player not found.');
+          }
+      });
+
+      this.peer.on('disconnected', () => {
+          console.warn('PeerJS Disconnected. Attempting to reconnect...');
+          this.peer.reconnect();
       });
   }
 
@@ -90,23 +104,79 @@ export class MultiplayerManager {
               y: data.y,
               skin: data.skin,
               hp: data.hp ?? 100,
+              locationId: data.locationId || 'farm',
               lastUpdate: Date.now()
           };
           this.remotePlayers.set(peerId, player);
           this.eventManager.emit('PLAYER_UPDATED', player);
       } else if (data.type === 'attack') {
           this.eventManager.emit('PLAYER_ATTACKED', data.damage);
+      } else if (data.type === 'world_action') {
+          this.handleWorldAction(data.action);
+      } else if (data.type === 'request_seed') {
+          const world = (window as any).gameInstance.worldManager;
+          const conn = this.connections.get(peerId);
+          if (conn && conn.open) {
+              conn.send({ type: 'seed_sync', seed: world.worldSeed });
+          }
+      } else if (data.type === 'seed_sync') {
+          const world = (window as any).gameInstance.worldManager;
+          world.setSeed(data.seed);
+          console.log(`World Seed Synced: ${data.seed}`);
+      } else if (data.type === 'chat') {
+          this.eventManager.emit('CHAT_MESSAGE', { 
+              username: data.username, 
+              text: data.text,
+              id: peerId 
+          });
       }
+  }
+
+  public sendChat(text: string): void {
+      const data = { type: 'chat', username: this.username, text };
+      this.connections.forEach(conn => {
+          if (conn.open) conn.send(data);
+      });
+      // Also emit locally for self
+      this.eventManager.emit('CHAT_MESSAGE', { username: this.username, text, id: 'me' });
+  }
+
+  private handleWorldAction(action: any): void {
+      const world = (window as any).gameInstance.worldManager;
+      const farm = (window as any).gameInstance.farmManager;
+      const tile = world.getTile(action.x, action.y);
+      if (!tile) return;
+
+      if (action.type === 'till') {
+          farm.till(tile);
+      } else if (action.type === 'plant') {
+          farm.plant(tile, action.cropId);
+      } else if (action.type === 'water') {
+          farm.water(tile);
+      } else if (action.type === 'harvest') {
+          farm.harvest(tile);
+      }
+  }
+
+  public broadcastWorldAction(action: any): void {
+      this.connections.forEach(conn => {
+          if (conn.open) conn.send({ type: 'world_action', action });
+      });
   }
 
   public connectToPeer(targetId: string): void {
       const conn = this.peer.connect(targetId);
       this.handleConnection(conn);
+      
+      // Request seed from host
+      conn.on('open', () => {
+          conn.send({ type: 'request_seed' });
+      });
   }
 
   private lastSyncTime: number = 0;
 
-  public broadcastSync(x: number, y: number, skin: string, hp: number = 100): void {
+  public broadcastSync(x: number, y: number, skin: string, hp: number = 100, locationId: string = 'farm'): void {
       const now = Date.now();
       if (now - this.lastSyncTime < 50) return; // limit to 20 fps to prevent WebRTC channel overflow
       this.lastSyncTime = now;
@@ -114,7 +184,7 @@ export class MultiplayerManager {
       const data = {
           type: 'sync',
           username: this.username,
-          x, y, skin, hp
+          x, y, skin, hp, locationId
       };
       this.connections.forEach(conn => {
           if (conn.open) conn.send(data);
